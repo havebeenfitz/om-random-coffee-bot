@@ -26,7 +26,7 @@ async def match(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.stopPoll()
+    print()
 
 
 # Common handlers
