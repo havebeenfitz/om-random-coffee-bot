@@ -1,8 +1,7 @@
 import logging
 import handlers
-from telegram.ext import filters, ApplicationBuilder, CommandHandler, MessageHandler
-
 import vars
+from telegram.ext import filters, ApplicationBuilder, CommandHandler, MessageHandler
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -22,4 +21,4 @@ if __name__ == '__bot__':
     application.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     application.add_error_handler(handlers.error)
 
-    application.run_polling(poll_interval=1)
+    application.run_polling()
