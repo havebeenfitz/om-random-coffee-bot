@@ -1,28 +1,30 @@
 import logging
 import handlers
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler
+from telegram.ext.filters import Text
+
 import vars
-from telegram.ext import *
 
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 logging.info('Starting Bot')
 
 
 if __name__ == '__main__':
-    updater = Updater(vars.API_KEY, use_context=True)
-    dispatcher = updater.dispatcher
+    application = ApplicationBuilder().token(vars.API_KEY).build()
 
     # Add commands
-    dispatcher.add_handler(CommandHandler('start', handlers.start_command))
-    dispatcher.add_handler(CommandHandler('interview', handlers.interview_command))
-    dispatcher.add_handler(CommandHandler('match', handlers.match_command))
-    dispatcher.add_handler(CommandHandler('stop', handlers.stop_command))
+    application.add_handler(CommandHandler('start', handlers.start_command))
+    application.add_handler(CommandHandler('interview', handlers.interview_command))
+    application.add_handler(CommandHandler('match', handlers.match_command))
+    application.add_handler(CommandHandler('stop', handlers.stop_command))
 
     # Add message handler
-    dispatcher.add_handler(MessageHandler(Filters.text, handlers.handle_message))
+    application.add_handler(MessageHandler(Text, handlers.handle_message))
 
     # Add error handler
-    dispatcher.add_error_handler(handlers.error)
+    application.add_error_handler(handlers.error)
 
-    updater.start_polling(1.0)
-    updater.idle()
+    application.run_polling()
