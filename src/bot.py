@@ -10,7 +10,7 @@ logging.basicConfig(
 logging.info('Starting Bot')
 
 
-if __name__ == '__main__':
+def main():
     application = ApplicationBuilder().token(vars.API_KEY).build()
 
     # Add handlers
@@ -22,3 +22,7 @@ if __name__ == '__main__':
     application.add_error_handler(handlers.error)
 
     application.run_polling()
+
+
+if __name__ == '__main__':
+    main()
