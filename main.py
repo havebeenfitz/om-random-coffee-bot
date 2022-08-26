@@ -22,4 +22,4 @@ if __name__ == '__main__':
     application.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     application.add_error_handler(handlers.error)
 
-    application.run_polling()
+    application.run_polling(poll_interval=1)
