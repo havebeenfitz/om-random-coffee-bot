@@ -10,7 +10,7 @@ logging.basicConfig(
 logging.info('Starting Bot')
 
 
-if __name__ == '__bot__':
+if __name__ == '__main__':
     application = ApplicationBuilder().token(vars.API_KEY).build()
 
     # Add handlers
