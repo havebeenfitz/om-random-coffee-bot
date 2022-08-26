@@ -1,14 +1,24 @@
 import logging
-from telegram import Update
+import vars
+from telegram import Update, Bot
 from telegram.ext import ContextTypes
 
 
 # Commands
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Привет, волк. Заполни анкету через /interview, после этого запусти казино через /match"
-    )
+    is_member = Bot.get_chat_member(vars.OM_USEFUL_CHAT_ID or vars.OM_FLOOD_CHAT_ID, update.effective_chat.id)
+
+    if is_member:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text='Привет, волк. Заполни анкету через /interview, после этого запусти казино через /match'
+        )
+
+    else:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text='Надо быть в стае, чтобы пользоваться ботом. Сходи сюда и подпишись: https://boosty.to/m0rtymerr'
+        )
 
 
 async def interview(update: Update, context: ContextTypes.DEFAULT_TYPE):
