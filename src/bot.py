@@ -18,7 +18,7 @@ def main():
     application.add_handler(CommandHandler('interview', handlers.interview))
     application.add_handler(CommandHandler('match', handlers.match))
     application.add_handler(CommandHandler('stop', handlers.stop))
-    application.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
+    # application.add_handler(MessageHandler(filters.TEXT, handlers.handle_message))
     application.add_error_handler(handlers.error)
 
     application.run_polling()
