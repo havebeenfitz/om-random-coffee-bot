@@ -1,3 +1,4 @@
+from collections import namedtuple
 class Command:
     start = 'start'
     cancel = 'cancel'
@@ -9,11 +10,12 @@ class SurveyState:
     city = 3
     bio = 4
 
-
 class Gender:
-    male = 'Муж'
-    female = 'Дама'
-    other = 'Другое'
+    GenderType = namedtuple('GenderType', ['text', 'id'])
+
+    male = GenderType(text="Муж", id='m')
+    female = GenderType(text="Муж", id='f')
+    other = GenderType(text="Дама", id='o')
 
 
 class MeetingFormat:

@@ -1,13 +1,16 @@
 import logging
-import vars
+from vars import TELEGRAM_API_KEY, OM_FLOOD_CHAT_ID, OM_USEFUL_CHAT_ID
+from db_manager import *
 from models import SurveyState, Gender, MeetingFormat
+from telegram.ext import ContextTypes, ConversationHandler
 from telegram import (
     Update,
     Bot,
+    KeyboardButton,
+    KeyboardButtonPollType,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove
 )
-from telegram.ext import ContextTypes, ConversationHandler
 
 # Logger setup
 logging.basicConfig(
@@ -15,12 +18,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# DB connection
+db_manager = DBManager()
+
 
 # Conversation handlers
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
-    bot = Bot(token=vars.API_KEY)
+    db_manager.restart()
+    bot = Bot(token=TELEGRAM_API_KEY)
     member = await bot.get_chat_member(
-        chat_id=vars.OM_FLOOD_CHAT_ID,
+        chat_id=OM_FLOOD_CHAT_ID,
         user_id=update.effective_user.id
     )
 
@@ -31,15 +38,25 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
         )
 
     else:
-        reply_keyboard = [[Gender.male, Gender.female, Gender.other]]
+        reply_keyboard = [
+            [KeyboardButton(text=Gender.male), KeyboardButton(text=Gender.female)],
+            [KeyboardButton(text=Gender.other)]
+        ]
 
         await update.message.reply_text(
             "Алоха! Расскажи немного о себе, и я подберу человека из стаи.\n"
             "Кто ты?",
             reply_markup=ReplyKeyboardMarkup(
-                reply_keyboard, one_time_keyboard=True,
+                reply_keyboard,
+                resize_keyboard=True,
+                selective=True,
                 input_field_placeholder="Выбери гендерную принадлежность"
             ),
+        )
+
+        db_manager.add_user(
+            user_id=member.user.id,
+            username=member.user.username
         )
 
         return SurveyState.gender
@@ -53,7 +70,10 @@ async def gender_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     logger.info("Gender of %s: %s", user.first_name, gender_text)
 
     reply_keyboard = [[MeetingFormat.online, MeetingFormat.offline]]
-    markup = ReplyKeyboardMarkup(reply_keyboard)
+    markup = ReplyKeyboardMarkup(
+        reply_keyboard,
+        resize_keyboard=True
+    )
 
     await update.message.reply_text(
         "Ок, "
@@ -103,8 +123,11 @@ async def bio_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     context.user_data['city'] = bio_text
 
     logger.info("Bio of %s: %s", user_name, bio_text)
+    db_manager.stop()
 
-    await update.message.reply_text(text="Спасибо! Запускаем казино по понедельникам в течение дня....")
+    await update.message.reply_text(
+        text="Спасибо! Запускаем казино по понедельникам в течение дня...."
+    )
 
     return ConversationHandler.END
 
@@ -114,8 +137,11 @@ async def cancel_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     logger.info("User %s canceled the conversation.", user.first_name)
 
     await update.message.reply_text(
-        "Ну ты это, заходи еще", reply_markup=ReplyKeyboardRemove()
+        "Ну ты это, заходи еще",
+        reply_markup=ReplyKeyboardRemove()
     )
+
+    db_manager.stop()
 
     return ConversationHandler.END
 

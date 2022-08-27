@@ -1,5 +1,5 @@
 import logging
-from vars import API_KEY
+from vars import TELEGRAM_API_KEY, APP_URL, PORT, PROD
 from handlers import *
 from models import Command, SurveyState, Gender, MeetingFormat
 from telegram.ext import filters, ApplicationBuilder, CommandHandler, MessageHandler
@@ -8,11 +8,11 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-logging.info('Starting Bot')
+logging.info('Starting Bot...')
 
 
 def main():
-    application = ApplicationBuilder().token(API_KEY).build()
+    application = ApplicationBuilder().token(TELEGRAM_API_KEY).build()
 
     # Add handlers
     conversation_handler = ConversationHandler(
@@ -44,6 +44,7 @@ def main():
     application.add_handler(conversation_handler)
     application.add_error_handler(error_handler)
 
+    logger.info('Start polling...')
     application.run_polling()
 
 
