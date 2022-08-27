@@ -1,24 +1,23 @@
 import logging
 import vars
-from models import SurveyState
+from models import SurveyState, Gender, MeetingFormat
 from telegram import (
     Update,
     Bot,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove
 )
 from telegram.ext import ContextTypes, ConversationHandler
 
-
+# Logger setup
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
+# Conversation handlers
+async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
     bot = Bot(token=vars.API_KEY)
     member = await bot.get_chat_member(
         chat_id=vars.OM_FLOOD_CHAT_ID,
@@ -32,7 +31,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveySta
         )
 
     else:
-        reply_keyboard = [["Муж", "Дама", "Другое"]]
+        reply_keyboard = [[Gender.male, Gender.female, Gender.other]]
 
         await update.message.reply_text(
             "Алоха! Расскажи немного о себе, и я подберу человека из стаи.\n"
@@ -46,18 +45,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveySta
         return SurveyState.gender
 
 
-async def gender(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
+async def gender_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
     gender_text = update.message.text
     user = update.message.from_user
     context.user_data['gender'] = gender_text
 
     logger.info("Gender of %s: %s", user.first_name, gender_text)
 
-    reply_keyboard = [["Онлайн", "Оффлайн"]]
+    reply_keyboard = [[MeetingFormat.online, MeetingFormat.offline]]
     markup = ReplyKeyboardMarkup(reply_keyboard)
 
     await update.message.reply_text(
-        "Ок,\n"
+        "Ок, "
         "Хочешь поболтать онлайн или в офлайне?",
         reply_markup=markup,
     )
@@ -65,14 +64,14 @@ async def gender(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveySt
     return SurveyState.meeting_format
 
 
-async def meeting_format(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
+async def meeting_format_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
     meet_format = update.message.text
     user = update.message.from_user.name
     context.user_data['meeting_format'] = meet_format
 
     logger.info("Meeting format of %s: %s", user, update.message.text)
 
-    if meet_format == 'Оффлайн':
+    if meet_format == MeetingFormat.offline:
         await update.message.reply_text(
             text="Где ты живешь? Формат: Страна, город",
             reply_markup=ReplyKeyboardRemove()
@@ -86,7 +85,7 @@ async def meeting_format(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return SurveyState.bio
 
 
-async def city(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
+async def city_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
     city_text = update.message.text
     user_name = update.message.from_user.name
     context.user_data['city'] = city_text
@@ -98,7 +97,7 @@ async def city(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyStat
     return SurveyState.bio
 
 
-async def bio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState:
+async def bio_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     bio_text = update.message.text
     user_name = update.message.from_user.name
     context.user_data['city'] = bio_text
@@ -109,10 +108,11 @@ async def bio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> SurveyState
 
     return ConversationHandler.END
 
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Cancels and ends the conversation."""
+
+async def cancel_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
+
     await update.message.reply_text(
         "Ну ты это, заходи еще", reply_markup=ReplyKeyboardRemove()
     )
@@ -121,19 +121,10 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 # Common handlers
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logging.info(f'User ({update.message.chat_id}) said {update.message.text}')
-
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=update.message.text
-    )
-
-
-async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.error(f'Update {update} caused error {context.error}')
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f'Error occured {context.error}'
+        text=f'Одна ошибка и ты ошибся: {context.error}'
     )
