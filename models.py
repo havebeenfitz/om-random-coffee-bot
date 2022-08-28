@@ -14,8 +14,8 @@ class Gender:
     GenderType = namedtuple('GenderType', ['text', 'id'])
 
     male = GenderType(text="Муж", id='m')
-    female = GenderType(text="Муж", id='f')
-    other = GenderType(text="Дама", id='o')
+    female = GenderType(text="Дама", id='f')
+    other = GenderType(text="Другое", id='o')
 
 
 class MeetingFormat:

@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  OM Random Coffee Bot
+Globals:
+  Function:
+    Timeout: 3
+    Runtime: python3.9
+    Architectures:
+      - x86_64
+
+Resources:
+  PTBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: bot.main
+      FunctionUrlConfig:
+        AuthType: NONE
+
+Outputs:
+  TelegramApi:
+    Description: "Lambda URL for PTB function"
+    Value:
+      Fn::GetAtt: PTBFunctionUrl.FunctionUrl
