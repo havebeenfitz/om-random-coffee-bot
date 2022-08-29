@@ -1,5 +1,5 @@
 import logging
-from src.vars import OM_FLOOD_CHAT_ID
+from src.vars import MEMBERSHIP_CHAT_1, MEMBERSHIP_CHAT_2
 from src.models import SurveyState, Gender, MeetingFormat
 from telegram.ext import CallbackContext, ConversationHandler
 from telegram import (
@@ -18,12 +18,18 @@ logger = logging.getLogger(__name__)
 
 # Conversation handlers
 def start_handler(update: Update, context: CallbackContext) -> SurveyState:
-    member = context.bot.get_chat_member(
-        chat_id=OM_FLOOD_CHAT_ID,
+    member_in_first = context.bot.get_chat_member(
+        chat_id=MEMBERSHIP_CHAT_1,
         user_id=update.effective_user.id
     )
 
-    if not member:
+    member_in_second = context.bot.get_chat_member(
+        chat_id=MEMBERSHIP_CHAT_2,
+        user_id=update.effective_user.id
+    )
+
+
+    if not (member_in_first and member_in_second):
         return context.bot.send_message(
             chat_id=update.effective_user.id,
             text='Надо быть в стае, чтобы пользоваться ботом. Сходи сюда и подпишись: https://boosty.to/m0rtymerr'

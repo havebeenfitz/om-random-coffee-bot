@@ -2,6 +2,18 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   OM Random Coffee Bot
+
+Parameters:
+  TELEGRAM_API_KEY:
+    Type: String
+    Description: Telegram API Key
+  MEMBERSHIP_CHAT_1:
+    Type: String
+    Description: Chat 1 to be in
+  MEMBERSHIP_CHAT_2:
+    Type: String
+    Description: Chat 2 to be in
+
 Globals:
   Function:
     Timeout: 1
@@ -10,16 +22,21 @@ Globals:
       - x86_64
 
 Resources:
-  PTBFunction:
+  OMRandomCoffeeBotFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
       Handler: bot.main
+      Environment:
+        Variables:
+          TELEGRAM_API_KEY: !Ref TELEGRAM_API_KEY
+          MEMBERSHIP_CHAT_1: !Ref MEMBERSHIP_CHAT_1
+          MEMBERSHIP_CHAT_2: !Ref MEMBERSHIP_CHAT_2
       FunctionUrlConfig:
         AuthType: NONE
 
 Outputs:
-  TelegramApi:
-    Description: "Lambda URL for PTB function"
+  OMRandomCoffeeBotFunction:
+    Description: "Lambda URL for OMRandomCoffeeBot function"
     Value:
-      Fn::GetAtt: PTBFunctionUrl.FunctionUrl
+      Fn::GetAtt: OMRandomCoffeeBotURL.FunctionUrl

@@ -3,3 +3,4 @@ venv
 .idea
 .aws-sam
 .DS_STORE
+env.json
