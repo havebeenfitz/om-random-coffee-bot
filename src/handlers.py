@@ -1,7 +1,6 @@
 import logging
-from vars import TELEGRAM_API_KEY, OM_FLOOD_CHAT_ID, OM_USEFUL_CHAT_ID
-from db_manager import *
-from models import SurveyState, Gender, MeetingFormat
+from src.vars import OM_FLOOD_CHAT_ID
+from src.models import SurveyState, Gender, MeetingFormat
 from telegram.ext import CallbackContext, ConversationHandler
 from telegram import (
     Update,

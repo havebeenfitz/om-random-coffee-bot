@@ -1,11 +1,11 @@
 import json
 
-from queue import Queue
 from telegram import Bot
-from telegram.ext import Filters, Dispatcher, CommandHandler, MessageHandler, ConversationHandler
+from telegram.ext import Filters, Dispatcher, CommandHandler, MessageHandler
 
-from handlers import *
-from models import Command, SurveyState, Gender, MeetingFormat
+from src.handlers import *
+from src.models import Command, SurveyState, Gender, MeetingFormat
+from src.vars import TELEGRAM_API_KEY
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -14,7 +14,6 @@ logging.basicConfig(
 logging.info('Starting Bot...')
 
 bot = Bot(TELEGRAM_API_KEY)
-update_queue = Queue(maxsize=1)
 dispatcher = Dispatcher(bot, None, use_context=True)
 
 

@@ -1,4 +1,6 @@
 from collections import namedtuple
+
+
 class Command:
     start = 'start'
     cancel = 'cancel'
@@ -9,6 +11,7 @@ class SurveyState:
     meeting_format = 2
     city = 3
     bio = 4
+
 
 class Gender:
     GenderType = namedtuple('GenderType', ['text', 'id'])
