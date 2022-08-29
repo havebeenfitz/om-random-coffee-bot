@@ -4,7 +4,7 @@ Description: >
   OM Random Coffee Bot
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 1
     Runtime: python3.9
     Architectures:
       - x86_64
