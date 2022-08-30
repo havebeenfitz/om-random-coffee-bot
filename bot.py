@@ -7,11 +7,13 @@ from src.handlers import *
 from src.models import Command, SurveyState, Gender, MeetingFormat
 from src.vars import TELEGRAM_API_KEY
 
+# Logger setup
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
-logging.info('Starting Bot...')
+logger = logging.getLogger(__name__)
+logger.info('Starting bot')
+
 
 bot = Bot(TELEGRAM_API_KEY)
 dispatcher = Dispatcher(bot, None, use_context=True)

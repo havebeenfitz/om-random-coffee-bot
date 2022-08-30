@@ -7,12 +7,9 @@ Parameters:
   TELEGRAM_API_KEY:
     Type: String
     Description: Telegram API Key
-  MEMBERSHIP_CHAT_1:
+  MEMBERSHIP_CHAT_ID:
     Type: String
-    Description: Chat 1 to be in
-  MEMBERSHIP_CHAT_2:
-    Type: String
-    Description: Chat 2 to be in
+    Description: Chat to be in to use the bot
 
 Globals:
   Function:
@@ -30,8 +27,7 @@ Resources:
       Environment:
         Variables:
           TELEGRAM_API_KEY: !Ref TELEGRAM_API_KEY
-          MEMBERSHIP_CHAT_1: !Ref MEMBERSHIP_CHAT_1
-          MEMBERSHIP_CHAT_2: !Ref MEMBERSHIP_CHAT_2
+          MEMBERSHIP_CHAT_ID: !Ref MEMBERSHIP_CHAT_ID
       FunctionUrlConfig:
         AuthType: NONE
 

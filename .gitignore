@@ -4,3 +4,6 @@ venv
 .aws-sam
 .DS_STORE
 env.json
+python
+python.zip
+bot.zip
