@@ -1,11 +1,10 @@
 import json
 
-from telegram import Bot
-from telegram.ext import Filters, Dispatcher, CommandHandler, MessageHandler
+from telegram.ext import Filters, Updater, CommandHandler, MessageHandler
 
 from src.handlers import *
 from src.models import Command, SurveyState, Gender, MeetingFormat
-from src.vars import TELEGRAM_API_KEY
+from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 
 # Logger setup
 logging.basicConfig(
@@ -14,9 +13,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info('Starting bot')
 
-
-bot = Bot(TELEGRAM_API_KEY)
-dispatcher = Dispatcher(bot, None, use_context=True)
+updater = Updater(token=TELEGRAM_API_KEY if PROD else TELEGRAM_API_DEBUG_KEY)
+bot = updater.bot
+dispatcher = updater.dispatcher
 
 
 def main(event, context):
@@ -49,13 +48,26 @@ def main(event, context):
 
     dispatcher.add_handler(conversation_handler)
 
-    try:
-        dispatcher.process_update(
-            Update.de_json(json.loads(event["body"]), bot)
-        )
+    if PROD:
+        try:
+            dispatcher.process_update(
+                Update.de_json(json.loads(event["body"]), bot)
+            )
 
-    except Exception as e:
-        logging.info(e)
-        return {"statusCode": 500}
+        except Exception as e:
+            logging.info(e)
+            return {
+                "statusCode": 500
+            }
 
-    return {"statusCode": 200}
+        return {
+            "statusCode": 200
+        }
+    else:
+        updater.start_polling()
+        updater.idle()
+
+
+if __name__ == '__main__':
+    if not PROD:
+        main(None, None)

@@ -1,4 +1,7 @@
 import os
 
-TELEGRAM_API_KEY = os.environ['TELEGRAM_API_KEY']
-MEMBERSHIP_CHAT_ID = os.environ['MEMBERSHIP_CHAT_ID']
+TELEGRAM_API_KEY = os.getenv('TELEGRAM_API_KEY')
+TELEGRAM_API_DEBUG_KEY = os.getenv('TELEGRAM_API_DEBUG_KEY')
+
+MEMBERSHIP_CHAT_ID = os.getenv('MEMBERSHIP_CHAT_ID')
+PROD = os.getenv('PROD', False) == 'True'

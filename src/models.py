@@ -18,7 +18,7 @@ class Gender:
 
     male = GenderType(text="Муж", id='m')
     female = GenderType(text="Дама", id='f')
-    other = GenderType(text="Другое", id='o')
+    other = GenderType(text="Сложнее", id='o')
 
 
 class MeetingFormat:
