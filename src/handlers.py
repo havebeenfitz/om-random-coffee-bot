@@ -5,8 +5,10 @@ from src.db_helper import DBHelper
 import logging
 from geopy import GeoNames, Location
 from telegram.ext import CallbackContext, ConversationHandler
+from telegram.constants import CHATMEMBER_KICKED, CHATMEMBER_LEFT
 from telegram import (
     error,
+    ChatMember,
     ChatAction,
     Update,
     InlineKeyboardButton,
@@ -33,32 +35,38 @@ def start_handler(update: Update, context: CallbackContext) -> int:
     try:
         member = context.bot.get_chat_member(chat_id=MEMBERSHIP_CHAT_ID, user_id=update.effective_user.id)
 
-        reply_keyboard = [
-            [
-                InlineKeyboardButton(text=Gender.male.text, callback_data=Gender.male.id),
-                InlineKeyboardButton(text=Gender.female.text, callback_data=Gender.female.id)
-            ],
-            [
-                InlineKeyboardButton(text=Gender.other.text, callback_data=Gender.other.id)
+        if member.status is not (CHATMEMBER_LEFT or CHATMEMBER_KICKED):
+            reply_keyboard = [
+                [
+                    InlineKeyboardButton(text=Gender.male.text, callback_data=Gender.male.id),
+                    InlineKeyboardButton(text=Gender.female.text, callback_data=Gender.female.id)
+                ],
+                [
+                    InlineKeyboardButton(text=Gender.other.text, callback_data=Gender.other.id)
+                ]
             ]
-        ]
 
-        update.message.reply_text(
-            "Алоха! Расскажи немного о себе, и я подберу человека из стаи.\n\n"
-            "Кто ты?",
-            reply_markup=InlineKeyboardMarkup(
-                reply_keyboard
-            ),
-        )
+            update.message.reply_text(
+                "Алоха! Расскажи немного о себе, и я подберу человека из стаи.\n\n"
+                "Кто ты?",
+                reply_markup=InlineKeyboardMarkup(
+                    reply_keyboard
+                ),
+            )
 
-        return SurveyState.gender
+            return SurveyState.gender
+        else:
+            send_membership_message(update, context)
     except error.BadRequest:
-        context.bot.send_message(
-            chat_id=update.effective_user.id,
-            text='Надо быть в стае, чтобы пользоваться ботом. Сходи сюда и подпишись: https://boosty.to/m0rtymerr'
-        )
+        send_membership_message(update, context)
 
-        return ConversationHandler.END
+def send_membership_message(update, context):
+    context.bot.send_message(
+        chat_id=update.effective_user.id,
+        text='Надо быть в стае, чтобы пользоваться ботом. Сходи сюда и подпишись: https://boosty.to/m0rtymerr'
+    )
+
+    return ConversationHandler.END
 
 
 def gender_handler(update: Update, context: CallbackContext) -> SurveyState:
