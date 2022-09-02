@@ -6,3 +6,4 @@ venv
 env.json
 python
 *.zip
+boto3

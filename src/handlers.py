@@ -1,7 +1,9 @@
-import logging
-from geopy import GeoNames, Location
 from src.vars import MEMBERSHIP_CHAT_ID, GEONAMES_ACCOUNT
 from src.models import SurveyState, Gender, MeetingFormat
+from src.db_helper import DBHelper
+
+import logging
+from geopy import GeoNames, Location
 from telegram.ext import CallbackContext, ConversationHandler
 from telegram import (
     error,
@@ -21,6 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 geo = GeoNames(GEONAMES_ACCOUNT)
+db_helper = DBHelper()
 
 
 # Conversation handlers
@@ -62,6 +65,8 @@ def gender_handler(update: Update, context: CallbackContext) -> SurveyState:
     query = update.callback_query
     query.answer()
 
+    context.user_data['gender'] = query.data
+
     logger.info("Gender of %s: %s", update.effective_user.username, update.callback_query.data)
 
     reply_keyboard = [
@@ -83,6 +88,8 @@ def gender_handler(update: Update, context: CallbackContext) -> SurveyState:
 def meeting_format_handler(update: Update, context: CallbackContext) -> SurveyState:
     query = update.callback_query
     query.answer()
+
+    context.user_data['meeting_format'] = query.data
 
     logger.info("Meeting format: %s", update.callback_query.data)
 
@@ -111,8 +118,14 @@ def city_handler(update: Update, context: CallbackContext) -> SurveyState:
     coordinates = (update.message.location.latitude, update.message.location.longitude)
     location: Location = geo.reverse(query=coordinates, exactly_one=True, timeout=2)
 
-    logger.info(f"{location.raw['countryCode']}")
-    logger.info(f"{location.raw['adminName1']}")
+    country = location.raw['countryCode']
+    city = location.raw['adminName1']
+
+    logger.info(f"{country}")
+    logger.info(f"{city}")
+
+    context.user_data['country'] = country
+    context.user_data['city'] = city
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -124,12 +137,51 @@ def city_handler(update: Update, context: CallbackContext) -> SurveyState:
 
 
 def bio_handler(update: Update, context: CallbackContext) -> int:
-    logger.info(update.message.text)
-    update.message.reply_text(
-        text="Спасибо! Запускаем казино по понедельникам в течение дня...."
-    )
+    bio = update.message.text
+    context.user_data['bio'] = bio
+
+    logger.info(f"Bio: {bio}")
+
+    update_user_in_db(update, context)
 
     return ConversationHandler.END
+
+
+def update_user_in_db(update, context):
+    country, city = (None, None)
+    user_id = update.effective_user.id
+    username = update.effective_user.username
+    gender = context.user_data['gender']
+    meeting_format = context.user_data['meeting_format']
+    bio = context.user_data['bio']
+
+    try:
+        country = context.user_data['country']
+        city = context.user_data['city']
+
+        update.message.reply_text(
+            f"Нойс, @{username}, ты заполнил анкeту!\nХочешь встретиться оффлайн в {city}\nКороткое био: {bio}"
+        )
+    except:
+        update.message.reply_text(
+            f"Нойс, @{username}, ты заполнил анкeту!\nХочешь поболтать онлайн\nКороткое био: {bio}"
+        )
+
+    context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
+
+    db_helper.update_user(
+        user_id=str(user_id),
+        username=update.effective_user.username,
+        gender=gender,
+        meeting_format=meeting_format,
+        country=country,
+        city=city,
+        bio=bio
+    )
+
+    update.message.reply_text(
+        "Ты записан, жди понедельника"
+    )
 
 
 # Common handlers
