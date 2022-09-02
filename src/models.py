@@ -22,7 +22,9 @@ class Gender:
 
 
 class MeetingFormat:
-    online = 'Онлайн'
-    offline = 'Оффлайн'
+    MeetingFormat = namedtuple('MeetingFormat', ['text', 'id'])
+
+    online = MeetingFormat(text='Онлайн', id='online')
+    offline = MeetingFormat(text='Офлайн', id='offline')
 
 

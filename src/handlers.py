@@ -1,12 +1,16 @@
 import logging
+import reverse_geocoder as rg
 from src.vars import MEMBERSHIP_CHAT_ID
 from src.models import SurveyState, Gender, MeetingFormat
 from telegram.ext import CallbackContext, ConversationHandler
 from telegram import (
+    ChatAction,
     Update,
-    KeyboardButton,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     ReplyKeyboardMarkup,
-    ReplyKeyboardRemove
+    ReplyKeyboardRemove,
+    KeyboardButton
 )
 
 # Logger setup
@@ -14,36 +18,40 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-logger.info('Starting bot')
 
 
 # Conversation handlers
-def start_handler(update: Update, context: CallbackContext) -> SurveyState:
+def start_handler(update: Update, context: CallbackContext) -> int:
+    context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
+
     member = context.bot.get_chat_member(
         chat_id=MEMBERSHIP_CHAT_ID,
         user_id=update.effective_user.id
     )
 
     if not member:
-        return context.bot.send_message(
+        context.bot.send_message(
             chat_id=update.effective_user.id,
             text='Надо быть в стае, чтобы пользоваться ботом. Сходи сюда и подпишись: https://boosty.to/m0rtymerr'
         )
 
+        return ConversationHandler.END
     else:
         reply_keyboard = [
-            [KeyboardButton(text=Gender.male.text), KeyboardButton(text=Gender.female.text)],
-            [KeyboardButton(text=Gender.other.text)]
+            [
+                InlineKeyboardButton(text=Gender.male.text, callback_data=Gender.male.id),
+                InlineKeyboardButton(text=Gender.female.text, callback_data=Gender.female.id)
+            ],
+            [
+                InlineKeyboardButton(text=Gender.other.text, callback_data=Gender.other.id)
+            ]
         ]
 
         update.message.reply_text(
-            "Алоха! Расскажи немного о себе, и я подберу человека из стаи.\n"
+            "Алоха! Расскажи немного о себе, и я подберу человека из стаи.\n\n"
             "Кто ты?",
-            reply_markup=ReplyKeyboardMarkup(
-                reply_keyboard,
-                resize_keyboard=True,
-                selective=True,
-                input_field_placeholder="Выбери гендерную принадлежность"
+            reply_markup=InlineKeyboardMarkup(
+                reply_keyboard
             ),
         )
 
@@ -51,21 +59,21 @@ def start_handler(update: Update, context: CallbackContext) -> SurveyState:
 
 
 def gender_handler(update: Update, context: CallbackContext) -> SurveyState:
-    gender_text = update.message.text
-    user = update.message.from_user
-    context.user_data['gender'] = gender_text
+    query = update.callback_query
+    query.answer()
 
-    logger.info("Gender of %s: %s", user.first_name, gender_text)
+    logger.info("Gender of %s: %s", update.effective_user.username, update.callback_query.data)
 
-    reply_keyboard = [[MeetingFormat.online, MeetingFormat.offline]]
-    markup = ReplyKeyboardMarkup(
-        reply_keyboard,
-        resize_keyboard=True
-    )
+    reply_keyboard = [
+        [
+            InlineKeyboardButton(MeetingFormat.online.text, callback_data=MeetingFormat.online.id),
+            InlineKeyboardButton(MeetingFormat.offline.text, callback_data=MeetingFormat.offline.id)
+        ]
+    ]
+    markup = InlineKeyboardMarkup(reply_keyboard)
 
-    update.message.reply_text(
-        "Ок, "
-        "Хочешь поболтать онлайн или в офлайне?",
+    query.edit_message_text(
+        "Ок, Хочешь поболтать онлайн или в офлайне?",
         reply_markup=markup,
     )
 
@@ -73,45 +81,50 @@ def gender_handler(update: Update, context: CallbackContext) -> SurveyState:
 
 
 def meeting_format_handler(update: Update, context: CallbackContext) -> SurveyState:
-    meet_format = update.message.text
-    user = update.message.from_user.name
-    context.user_data['meeting_format'] = meet_format
+    query = update.callback_query
+    query.answer()
 
-    logger.info("Meeting format of %s: %s", user, update.message.text)
+    logger.info("Meeting format: %s", update.callback_query.data)
 
-    if meet_format == MeetingFormat.offline:
-        update.message.reply_text(
-            text="Где ты живешь? Формат: Страна, город",
-            reply_markup=ReplyKeyboardRemove()
+    if query.data == MeetingFormat.offline.id:
+        new_keyboard = [[KeyboardButton(text='Поделиться локацией', request_location=True)]]
+        context.bot.send_message(
+            chat_id=update.effective_user.id,
+            text='Где ты находишься? В локации будут использованы только страна и город',
+            reply_markup=ReplyKeyboardMarkup(new_keyboard, one_time_keyboard=True, resize_keyboard=True)
         )
         return SurveyState.city
     else:
-        update.message.reply_text(
+        query.edit_message_text(
             text="Коротко напиши о своих интересах",
-            reply_markup=ReplyKeyboardRemove()
         )
         return SurveyState.bio
 
 
 def city_handler(update: Update, context: CallbackContext) -> SurveyState:
-    city_text = update.message.text
-    user_name = update.message.from_user.name
-    context.user_data['city'] = city_text
+    update.message.reply_text(
+        text='Вычленяем страну и город, абажди...',
+        reply_markup=ReplyKeyboardRemove()
+    )
+    context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
-    logger.info("City of %s: %s", user_name, city_text)
+    coordinates = (update.message.location.latitude, update.message.location.longitude)
+    location = rg.get(coordinates)
 
-    update.message.reply_text(text="Коротко напиши о своих интересах в произвольной форме")
+    logger.info(f"{location['cc']}")
+    logger.info(f"{location['name']}")
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Коротко напиши о своих интересах в произвольной форме",
+        reply_markup=ReplyKeyboardRemove()
+    )
 
     return SurveyState.bio
 
 
 def bio_handler(update: Update, context: CallbackContext) -> int:
-    bio_text = update.message.text
-    user_name = update.message.from_user.name
-    context.user_data['city'] = bio_text
-
-    logger.info("Bio of %s: %s", user_name, bio_text)
-
+    logger.info(update.message.text)
     update.message.reply_text(
         text="Спасибо! Запускаем казино по понедельникам в течение дня...."
     )
@@ -119,19 +132,16 @@ def bio_handler(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 
 
+# Common handlers
 def cancel_handler(update: Update, context: CallbackContext) -> int:
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
 
-    update.message.reply_text(
-        "Ну ты это, заходи еще",
-        reply_markup=ReplyKeyboardRemove()
-    )
+    context.bot.send_message(chat_id=update.message.from_user.id, text="Ну ты это, заходи еще")
 
     return ConversationHandler.END
 
 
-# Common handlers
 def error_handler(update: Update, context: CallbackContext):
     logging.error(f'Update {update} caused error {context.error}')
 

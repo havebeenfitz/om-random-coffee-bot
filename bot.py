@@ -1,6 +1,6 @@
 import json
 
-from telegram.ext import Filters, Updater, CommandHandler, MessageHandler
+from telegram.ext import Filters, Updater, CommandHandler, MessageHandler,CallbackQueryHandler
 
 from src.handlers import *
 from src.models import Command, SurveyState, Gender, MeetingFormat
@@ -20,30 +20,36 @@ dispatcher = updater.dispatcher
 
 def main(event, context):
     conversation_handler = ConversationHandler(
-        entry_points=[CommandHandler(Command.start, start_handler)],
+        entry_points=[
+            CommandHandler(Command.start, start_handler)
+        ],
         states={
             SurveyState.gender: [
-                MessageHandler(
-                    Filters.regex(f"^({Gender.male.text}|{Gender.female.text}|{Gender.other.text})$"),
-                    gender_handler
-                )
+                CallbackQueryHandler(
+                    gender_handler,
+                    pattern=f"^{Gender.male.id}|{Gender.female.id}|{Gender.other.id}$",
+                ),
+                CommandHandler(Command.cancel, cancel_handler)
             ],
             SurveyState.meeting_format: [
-                MessageHandler(
-                    Filters.regex(f"^({MeetingFormat.online}|{MeetingFormat.offline})$"),
-                    meeting_format_handler
-                )
+                CallbackQueryHandler(
+                    meeting_format_handler,
+                    pattern=f"^({MeetingFormat.online.id}|{MeetingFormat.offline.id})$"
+                ),
+                CommandHandler(Command.cancel, cancel_handler)
             ],
             SurveyState.city: [
-                MessageHandler(Filters.text, city_handler)
+                MessageHandler(filters=Filters.location, callback=city_handler),
+                CommandHandler(Command.cancel, cancel_handler)
             ],
             SurveyState.bio: [
-                MessageHandler(Filters.text, bio_handler)
+                MessageHandler(filters=Filters.text & ~Filters.command, callback=bio_handler),
+                CommandHandler(Command.cancel, cancel_handler)
             ]
         },
         fallbacks=[
             CommandHandler(Command.cancel, cancel_handler)
-        ],
+        ]
     )
 
     dispatcher.add_handler(conversation_handler)
