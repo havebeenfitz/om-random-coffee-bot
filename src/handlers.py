@@ -1,9 +1,10 @@
 import logging
-import reverse_geocoder as rg
-from src.vars import MEMBERSHIP_CHAT_ID
+from geopy import GeoNames, Location
+from src.vars import MEMBERSHIP_CHAT_ID, GEONAMES_ACCOUNT
 from src.models import SurveyState, Gender, MeetingFormat
 from telegram.ext import CallbackContext, ConversationHandler
 from telegram import (
+    error,
     ChatAction,
     Update,
     InlineKeyboardButton,
@@ -19,24 +20,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+geo = GeoNames(GEONAMES_ACCOUNT)
+
 
 # Conversation handlers
 def start_handler(update: Update, context: CallbackContext) -> int:
     context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
-    member = context.bot.get_chat_member(
-        chat_id=MEMBERSHIP_CHAT_ID,
-        user_id=update.effective_user.id
-    )
+    try:
+        member = context.bot.get_chat_member(chat_id=MEMBERSHIP_CHAT_ID, user_id=update.effective_user.id)
 
-    if not member:
-        context.bot.send_message(
-            chat_id=update.effective_user.id,
-            text='Надо быть в стае, чтобы пользоваться ботом. Сходи сюда и подпишись: https://boosty.to/m0rtymerr'
-        )
-
-        return ConversationHandler.END
-    else:
         reply_keyboard = [
             [
                 InlineKeyboardButton(text=Gender.male.text, callback_data=Gender.male.id),
@@ -56,6 +49,13 @@ def start_handler(update: Update, context: CallbackContext) -> int:
         )
 
         return SurveyState.gender
+    except error.BadRequest:
+        context.bot.send_message(
+            chat_id=update.effective_user.id,
+            text='Надо быть в стае, чтобы пользоваться ботом. Сходи сюда и подпишись: https://boosty.to/m0rtymerr'
+        )
+
+        return ConversationHandler.END
 
 
 def gender_handler(update: Update, context: CallbackContext) -> SurveyState:
@@ -109,10 +109,10 @@ def city_handler(update: Update, context: CallbackContext) -> SurveyState:
     context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
     coordinates = (update.message.location.latitude, update.message.location.longitude)
-    location = rg.get(coordinates)
+    location: Location = geo.reverse(query=coordinates, exactly_one=True, timeout=2)
 
-    logger.info(f"{location['cc']}")
-    logger.info(f"{location['name']}")
+    logger.info(f"{location.raw['countryCode']}")
+    logger.info(f"{location.raw['adminName1']}")
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,

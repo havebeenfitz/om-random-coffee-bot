@@ -1,2 +1,2 @@
 python-telegram-bot==13.13
-reverse-geocoder==1.5.1
+geopy==2.2.0
