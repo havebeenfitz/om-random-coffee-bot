@@ -2,7 +2,8 @@ import json
 
 from telegram.ext import Filters, Updater, CommandHandler, MessageHandler,CallbackQueryHandler
 
-from src.handlers import *
+from src.handlers.profile_handlers import *
+from src.handlers.common_handlers import *
 from src.models import Command, SurveyState, Gender, MeetingFormat
 from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 
@@ -39,7 +40,7 @@ def main(event, context):
                 CommandHandler(Command.cancel, cancel_handler)
             ],
             SurveyState.city: [
-                MessageHandler(filters=Filters.location, callback=city_handler),
+                MessageHandler(filters=Filters.location & ~Filters.command, callback=city_handler),
                 CommandHandler(Command.cancel, cancel_handler)
             ],
             SurveyState.bio: [

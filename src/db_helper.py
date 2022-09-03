@@ -3,8 +3,14 @@ import boto3
 
 
 class DBHelper:
+    _instance = None
 
-    users = boto3.resource('dynamodb').Table('users')
+    def __new__(cls):
+        if not hasattr(cls, '_instance'):
+            cls._instance = super(DBHelper, cls).__new__(cls)
+        return cls._instance
+
+    _usersTable = boto3.resource('dynamodb').Table('users')
 
     def update_user(
             self,
@@ -29,14 +35,13 @@ class DBHelper:
             item['city'] = city
             item['country'] = country
 
-        self.users.put_item(
+        self._usersTable.put_item(
             Item=item
         )
 
     def delete_user(self, user_id: str):
-        self.users.delete_item(
+        self._usersTable.delete_item(
             Key={
                 'id': user_id
             }
         )
-

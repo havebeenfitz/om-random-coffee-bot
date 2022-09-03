@@ -1,14 +1,14 @@
+import logging
+
 from src.vars import MEMBERSHIP_CHAT_ID, GEONAMES_ACCOUNT
 from src.models import SurveyState, Gender, MeetingFormat
 from src.db_helper import DBHelper
 
-import logging
 from geopy import GeoNames, Location
 from telegram.ext import CallbackContext, ConversationHandler
 from telegram.constants import CHATMEMBER_KICKED, CHATMEMBER_LEFT
 from telegram import (
     error,
-    ChatMember,
     ChatAction,
     Update,
     InlineKeyboardButton,
@@ -59,6 +59,7 @@ def start_handler(update: Update, context: CallbackContext) -> int:
             send_membership_message(update, context)
     except error.BadRequest:
         send_membership_message(update, context)
+
 
 def send_membership_message(update, context):
     context.bot.send_message(
@@ -168,11 +169,11 @@ def update_user_in_db(update, context):
         city = context.user_data['city']
 
         update.message.reply_text(
-            f"Нойс, @{username}, ты заполнил анкeту!\nХочешь встретиться оффлайн в {city}\nКороткое био: {bio}"
+            f"Нойс, @{username}, ты заполнил анкeту!\nХочешь встретиться оффлайн в {city}\nТвои интересы: {bio}"
         )
-    except:
+    except None:
         update.message.reply_text(
-            f"Нойс, @{username}, ты заполнил анкeту!\nХочешь поболтать онлайн\nКороткое био: {bio}"
+            f"Нойс, @{username}, ты заполнил анкeту!\nХочешь поболтать онлайн\nТвои интересы: {bio}"
         )
 
     context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
@@ -189,23 +190,4 @@ def update_user_in_db(update, context):
 
     update.message.reply_text(
         "Ты записан, жди понедельника"
-    )
-
-
-# Common handlers
-def cancel_handler(update: Update, context: CallbackContext) -> int:
-    user = update.message.from_user
-    logger.info("User %s canceled the conversation.", user.first_name)
-
-    context.bot.send_message(chat_id=update.message.from_user.id, text="Ну ты это, заходи еще")
-
-    return ConversationHandler.END
-
-
-def error_handler(update: Update, context: CallbackContext):
-    logging.error(f'Update {update} caused error {context.error}')
-
-    context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=f'Одна ошибка и ты ошибся: {context.error}'
     )
