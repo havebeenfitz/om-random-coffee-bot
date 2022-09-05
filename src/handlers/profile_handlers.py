@@ -1,11 +1,12 @@
 import logging
 
-from src.vars import MEMBERSHIP_CHAT_ID, GEONAMES_ACCOUNT
-from src.models import SurveyState, Gender, MeetingFormat
+from src.vars import MEMBERSHIP_CHAT_ID, GEONAMES_ACCOUNT, ADMIN_ACCOUNTS
+from src.models import SurveyState, Gender, MeetingFormat, Command
 from src.db_helper import DBHelper
+from src.handlers.pair_handlers import *
 
 from geopy import GeoNames, Location
-from telegram.ext import CallbackContext, ConversationHandler
+from telegram.ext import CallbackContext, ConversationHandler, CommandHandler, MessageHandler, Filters
 from telegram.constants import CHATMEMBER_KICKED, CHATMEMBER_LEFT
 from telegram import (
     error,
@@ -19,10 +20,7 @@ from telegram import (
 )
 
 # Logger setup
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+logging.getLogger().setLevel('INFO')
 
 geo = GeoNames(GEONAMES_ACCOUNT)
 db_helper = DBHelper()
@@ -33,7 +31,12 @@ def start_handler(update: Update, context: CallbackContext) -> int:
     context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
     try:
+        logging.info('getting chat member')
         member = context.bot.get_chat_member(chat_id=MEMBERSHIP_CHAT_ID, user_id=update.effective_user.id)
+
+        if str(member.user.id) in ADMIN_ACCOUNTS:
+            generate_pairs_handler = CommandHandler(Command.generate_pairs, generate_pairs)
+            context.dispatcher.add_handler(generate_pairs_handler)
 
         if member.status is not (CHATMEMBER_LEFT or CHATMEMBER_KICKED):
             reply_keyboard = [
@@ -56,9 +59,13 @@ def start_handler(update: Update, context: CallbackContext) -> int:
 
             return SurveyState.gender
         else:
+            logging.info('sending membership message request')
             send_membership_message(update, context)
+            return ConversationHandler.END
     except error.BadRequest:
+        logging.info('bad request')
         send_membership_message(update, context)
+        return ConversationHandler.END
 
 
 def send_membership_message(update, context):
@@ -76,7 +83,7 @@ def gender_handler(update: Update, context: CallbackContext) -> SurveyState:
 
     context.user_data['gender'] = query.data
 
-    logger.info("Gender of %s: %s", update.effective_user.username, update.callback_query.data)
+    logging.info("Gender of %s: %s", update.effective_user.username, update.callback_query.data)
 
     reply_keyboard = [
         [
@@ -100,7 +107,7 @@ def meeting_format_handler(update: Update, context: CallbackContext) -> SurveySt
 
     context.user_data['meeting_format'] = query.data
 
-    logger.info("Meeting format: %s", update.callback_query.data)
+    logging.info("Meeting format: %s", update.callback_query.data)
 
     if query.data == MeetingFormat.offline.id:
         new_keyboard = [[KeyboardButton(text='Поделиться локацией', request_location=True)]]
@@ -130,8 +137,8 @@ def city_handler(update: Update, context: CallbackContext) -> SurveyState:
     country = location.raw['countryCode']
     city = location.raw['adminName1']
 
-    logger.info(f"{country}")
-    logger.info(f"{city}")
+    logging.info(f"{country}")
+    logging.info(f"{city}")
 
     context.user_data['country'] = country
     context.user_data['city'] = city
@@ -149,7 +156,7 @@ def bio_handler(update: Update, context: CallbackContext) -> int:
     bio = update.message.text
     context.user_data['bio'] = bio
 
-    logger.info(f"Bio: {bio}")
+    logging.info(f"Bio: {bio}")
 
     update_user_in_db(update, context)
 

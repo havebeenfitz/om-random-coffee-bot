@@ -1,6 +1,10 @@
 import json
 
-from telegram.ext import Filters, Updater, CommandHandler, MessageHandler,CallbackQueryHandler
+from telegram.ext import Updater, CallbackQueryHandler
+from telegram.ext import messagequeue as mq
+from telegram.utils.request import Request
+
+from src.subclasses.rate_limited_bot import MQBot
 
 from src.handlers.profile_handlers import *
 from src.handlers.common_handlers import *
@@ -8,15 +12,15 @@ from src.models import Command, SurveyState, Gender, MeetingFormat
 from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 
 # Logger setup
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-logger.info('Starting bot')
+logging.getLogger().setLevel('INFO')
 
-updater = Updater(token=TELEGRAM_API_KEY if PROD else TELEGRAM_API_DEBUG_KEY)
-bot = updater.bot
+queue = mq.MessageQueue(all_burst_limit=25)
+request = Request()
+bot = MQBot(TELEGRAM_API_KEY if PROD else TELEGRAM_API_DEBUG_KEY, request=request, mqueue=queue)
+updater = Updater(bot=bot)
 dispatcher = updater.dispatcher
+
+logging.info('Starting bot')
 
 
 def main(event, context):
@@ -54,6 +58,7 @@ def main(event, context):
     )
 
     dispatcher.add_handler(conversation_handler)
+    dispatcher.add_error_handler(error_handler)
 
     if PROD:
         try:
@@ -73,6 +78,7 @@ def main(event, context):
     else:
         updater.start_polling()
         updater.idle()
+        logging.info('Updater idle...')
 
 
 if __name__ == '__main__':

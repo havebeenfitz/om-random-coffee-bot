@@ -3,6 +3,7 @@ from collections import namedtuple
 
 class Command:
     start = 'start'
+    generate_pairs = 'generate'
     cancel = 'cancel'
 
 
