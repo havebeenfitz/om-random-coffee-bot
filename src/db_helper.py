@@ -3,6 +3,7 @@ import boto3
 
 
 class DBHelper(object):
+
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(DBHelper, cls).__new__(cls)

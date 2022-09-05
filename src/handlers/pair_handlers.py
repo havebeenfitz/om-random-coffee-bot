@@ -14,7 +14,7 @@ logging.getLogger().setLevel('INFO')
 db_helper = DBHelper()
 
 
-def generate_pairs(update: Update, context: CallbackContext):
+async def generate_pairs(update: Update, context: CallbackContext):
     logging.info('Generating pairs...')
 
     pairs: list[list] = []
@@ -32,10 +32,10 @@ def generate_pairs(update: Update, context: CallbackContext):
         _shuffle_pairs(no_pair_users, pairs, users)
 
     for pair in pairs:
-        _send_pair_messages(update, context, pair)
+        await _send_pair_messages(update, context, pair)
 
     for no_pair_user in no_pair_users:
-        _send_no_pair_messages(update, context, no_pair_user)
+        await _send_no_pair_messages(update, context, no_pair_user)
 
     logging.info('Generating pairs done!')
 
@@ -52,7 +52,7 @@ def _shuffle_pairs(no_pair_users, pairs, users):
         no_pair_users.append(shuffled_users[users_count - 1])
 
 
-def _send_pair_messages(update, context, pair):
+async def _send_pair_messages(update, context, pair):
     meeting_format = "поболтать онлайн" if pair[0]['format'] == 'online' else f"встретиться офлайн. Локация: {pair[0]['city']}"
     first_user_id = int(pair[0]['id'])
     second_user_id = int(pair[1]['id'])
@@ -61,7 +61,7 @@ def _send_pair_messages(update, context, pair):
     first_user_bio = pair[0]['bio']
     second_user_bio = pair[1]['bio']
 
-    context.bot.send_message(
+    await context.bot.send_message(
         # chat_id=first_user_id,
         chat_id=update.effective_user.id,
         text=f"Штош, @{first_user_name}!\n\n" \
@@ -69,13 +69,13 @@ def _send_pair_messages(update, context, pair):
              f"Вы оба хотели {meeting_format}.\n\n" \
              f"Можно начать разговор с обсуждения интересов собеседника: {second_user_bio}"
     )
-    context.bot.send_photo(
+    await context.bot.send_photo(
         # chat_id=first_user_id,
         chat_id=update.effective_user.id,
         photo=PAIRS_PIC_URL
     )
 
-    context.bot.send_message(
+    await context.bot.send_message(
         # chat_id=second_user_id,
         chat_id=update.effective_user.id,
         text=f"Штош, @{second_user_name}!\n\n" \
@@ -83,7 +83,7 @@ def _send_pair_messages(update, context, pair):
              f"Вы хотели {meeting_format}.\n\n" \
              f"Можно начать разговор с обсуждения интересов собеседника: {first_user_bio}"
     )
-    context.bot.send_photo(
+    await context.bot.send_photo(
         # chat_id=second_user_id,
         chat_id=update.effective_user.id,
         photo=PAIRS_PIC_URL
@@ -92,8 +92,8 @@ def _send_pair_messages(update, context, pair):
     logging.info(f"{first_user_name}, paired with {second_user_name}")
 
 
-def _send_no_pair_messages(update, context, no_pair_user):
-    context.bot.send_message(
+async def _send_no_pair_messages(update, context, no_pair_user):
+    await context.bot.send_message(
         # chat_id=MEMBERSHIP_CHAT_ID,
         chat_id=update.effective_user.id,
         text=f"Сорян, @{no_pair_user['username']}!\n" \

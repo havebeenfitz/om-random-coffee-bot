@@ -1,11 +1,13 @@
 import json
 import logging
 
-from telegram.ext import Updater, CallbackQueryHandler
-from telegram.ext import messagequeue as mq
-from telegram.utils.request import Request
-
-from src.subclasses.rate_limited_bot import RLBot
+from telegram.ext import (
+    ApplicationBuilder,
+    ContextTypes,
+    CommandHandler,
+    CallbackQueryHandler,
+    AIORateLimiter
+)
 
 from src.handlers.profile_handlers import *
 from src.handlers.common_handlers import *
@@ -15,11 +17,10 @@ from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 # Logger setup
 logging.getLogger().setLevel('INFO')
 
-queue = mq.MessageQueue(all_burst_limit=29, all_time_limit_ms=999)
-request = Request(con_pool_size=10)
-bot = RLBot(token=TELEGRAM_API_KEY if PROD else TELEGRAM_API_DEBUG_KEY, request=request, mqueue=queue)
-updater = Updater(bot=bot)
-dispatcher = updater.dispatcher
+application = ApplicationBuilder()\
+    .token(TELEGRAM_API_KEY if PROD else TELEGRAM_API_DEBUG_KEY)\
+    .rate_limiter(AIORateLimiter(overall_max_rate=25))\
+    .build()
 
 logging.info('Starting bot')
 
@@ -45,11 +46,11 @@ def main(event, context):
                 CommandHandler(Command.cancel, cancel_handler)
             ],
             SurveyState.city: [
-                MessageHandler(filters=Filters.location & ~Filters.command, callback=city_handler),
+                MessageHandler(filters=filters.LOCATION & ~filters.COMMAND, callback=city_handler),
                 CommandHandler(Command.cancel, cancel_handler)
             ],
             SurveyState.bio: [
-                MessageHandler(filters=Filters.text & ~Filters.command, callback=bio_handler),
+                MessageHandler(filters=filters.TEXT & ~filters.COMMAND, callback=bio_handler),
                 CommandHandler(Command.cancel, cancel_handler)
             ]
         },
@@ -58,15 +59,15 @@ def main(event, context):
         ]
     )
 
-    dispatcher.add_handler(conversation_handler)
-    dispatcher.add_error_handler(error_handler)
+    application.add_handler(conversation_handler)
+    application.add_error_handler(error_handler)
 
     if PROD:
         logging.info('Start processing response')
         try:
             logging.info('Trying process update')
-            dispatcher.process_update(
-                Update.de_json(json.loads(event["body"]), bot)
+            application.process_update(
+                Update.de_json(json.loads(event["body"]), application.bot)
             )
 
         except Exception as exc:
@@ -80,8 +81,7 @@ def main(event, context):
         }
     else:
         logging.info('Start polling...')
-        updater.start_polling()
-        updater.idle()
+        application.run_polling()
 
 
 if __name__ == '__main__':
