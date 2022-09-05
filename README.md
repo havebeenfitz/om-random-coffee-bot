@@ -18,7 +18,7 @@ OM Random Coffee Telegram bot
 
 ### Nice to have:
 
-- Select offline location from list
-- Notify members about next round
-- Edit profile
+- Select offline location from a list
+- Notify members about the next round
+- Edit profile from inline menu
 - Move all strings to a separate file/module
