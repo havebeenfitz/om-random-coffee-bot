@@ -31,14 +31,18 @@ def start_handler(update: Update, context: CallbackContext) -> int:
     context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
     try:
-        logging.info('getting chat member')
+        logging.info('Getting chat member..')
         member = context.bot.get_chat_member(chat_id=MEMBERSHIP_CHAT_ID, user_id=update.effective_user.id)
+        logging.info('Done..')
 
         if str(member.user.id) in ADMIN_ACCOUNTS:
+            logging.info(f'{member.user.id} is admin. adding generate pairs handler...')
             generate_pairs_handler = CommandHandler(Command.generate_pairs, generate_pairs)
             context.dispatcher.add_handler(generate_pairs_handler)
+            logging.info('Done')
 
         if member.status is not (CHATMEMBER_LEFT or CHATMEMBER_KICKED):
+            logging.info('Member is fine, show keyboard..')
             reply_keyboard = [
                 [
                     InlineKeyboardButton(text=Gender.male.text, callback_data=Gender.male.id),
@@ -57,10 +61,13 @@ def start_handler(update: Update, context: CallbackContext) -> int:
                 ),
             )
 
+            logging.info('Keyboard shown')
+
             return SurveyState.gender
         else:
-            logging.info('sending membership message request')
+            logging.info('Sending membership message request...')
             send_membership_message(update, context)
+            logging.info('Done')
             return ConversationHandler.END
     except error.BadRequest:
         logging.info('bad request')

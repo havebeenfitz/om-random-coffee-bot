@@ -1,10 +1,11 @@
 import json
+import logging
 
 from telegram.ext import Updater, CallbackQueryHandler
 from telegram.ext import messagequeue as mq
 from telegram.utils.request import Request
 
-from src.subclasses.rate_limited_bot import MQBot
+from src.subclasses.rate_limited_bot import RLBot
 
 from src.handlers.profile_handlers import *
 from src.handlers.common_handlers import *
@@ -14,9 +15,9 @@ from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 # Logger setup
 logging.getLogger().setLevel('INFO')
 
-queue = mq.MessageQueue(all_burst_limit=25)
+queue = mq.MessageQueue(all_burst_limit=29, all_time_limit_ms=999)
 request = Request(con_pool_size=10)
-bot = MQBot(TELEGRAM_API_KEY if PROD else TELEGRAM_API_DEBUG_KEY, request=request, mqueue=queue)
+bot = RLBot(token=TELEGRAM_API_KEY if PROD else TELEGRAM_API_DEBUG_KEY, request=request, mqueue=queue)
 updater = Updater(bot=bot)
 dispatcher = updater.dispatcher
 
@@ -61,13 +62,15 @@ def main(event, context):
     dispatcher.add_error_handler(error_handler)
 
     if PROD:
+        logging.info('Start processing response')
         try:
+            logging.info('Trying process update')
             dispatcher.process_update(
                 Update.de_json(json.loads(event["body"]), bot)
             )
 
-        except Exception as e:
-            logging.info(e)
+        except Exception as exc:
+            logging.info(f"failed process update with {exc}")
             return {
                 "statusCode": 500
             }
@@ -76,9 +79,9 @@ def main(event, context):
             "statusCode": 200
         }
     else:
+        logging.info('Start polling...')
         updater.start_polling()
         updater.idle()
-        logging.info('Updater idle...')
 
 
 if __name__ == '__main__':

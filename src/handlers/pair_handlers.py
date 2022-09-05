@@ -47,38 +47,49 @@ def _shuffle_pairs(no_pair_users, pairs, users):
     shuffled_users = random.sample(users, users_count)
     group_pairs = [[i, j] for i, j in zip(shuffled_users[::2], shuffled_users[1::2])]
     pairs.extend(group_pairs)
+
     if users_count % 2 != 0:
         no_pair_users.append(shuffled_users[users_count - 1])
 
 
 def _send_pair_messages(update, context, pair):
     meeting_format = "поболтать онлайн" if pair[0]['format'] == 'online' else f"встретиться в {pair[0]['city']}"
+    first_user_id = int(pair[0]['id'])
+    second_user_id = int(pair[1]['id'])
+    first_user_name = pair[0]['username']
+    second_user_name = pair[1]['username']
+    first_user_bio = pair[0]['bio']
+    second_user_bio = pair[1]['bio']
+
     context.bot.send_message(
-        # chat_id=pair[0]['id'],
+        # chat_id=first_user_id,
         chat_id=update.effective_user.id,
-        text=f"Штош, @{pair[0]['username']}!\n\n" \
-             f"Твоя пара на эту неделю @{pair[1]['username']}. " \
+        text=f"Штош, @{first_user_name}!\n\n" \
+             f"Твоя пара на эту неделю @{second_user_name}. " \
              f"Вы хотели {meeting_format}.\n\n" \
-             f"Можно начать разговор с обсуждения интересов собеседника: {pair[1]['bio']}"
+             f"Можно начать разговор с обсуждения интересов собеседника: {second_user_bio}"
     )
     context.bot.send_photo(
+        # chat_id=first_user_id,
         chat_id=update.effective_user.id,
         photo=PAIRS_PIC_URL
     )
+
     context.bot.send_message(
-        # chat_id=pair[1]['id'],
+        # chat_id=second_user_id,
         chat_id=update.effective_user.id,
-        text=f"Штош, @{pair[1]['username']}!\n\n" \
-             f"Твоя пара на эту неделю @{pair[0]['username']}. " \
+        text=f"Штош, @{second_user_name}!\n\n" \
+             f"Твоя пара на эту неделю @{first_user_name}. " \
              f"Вы хотели {meeting_format}.\n\n" \
-             f"Можно начать разговор с обсуждения интересов собеседника: {pair[0]['bio']}"
+             f"Можно начать разговор с обсуждения интересов собеседника: {first_user_bio}"
     )
     context.bot.send_photo(
+        # chat_id=second_user_id,
         chat_id=update.effective_user.id,
         photo=PAIRS_PIC_URL
     )
-    logging.info(f"{pair[0]['username']}, your pair is {pair[1]['username']}")
-    logging.info(f"{pair[1]['username']}, your pair is {pair[0]['username']}")
+
+    logging.info(f"{first_user_name}, paired with {second_user_name}")
 
 
 def _send_no_pair_messages(update, context, no_pair_user):
