@@ -22,14 +22,14 @@ class DBHelper(object):
         return users
 
     def update_user(
-            self,
-            user_id: str,
-            username: str,
-            gender: str,
-            meeting_format: str,
-            bio: str,
-            country: Optional[str] = None,
-            city: Optional[str] = None
+        self,
+        user_id: str,
+        username: str,
+        gender: str,
+        meeting_format: str,
+        bio: str,
+        country: Optional[str] = None,
+        city: Optional[str] = None
     ):
         item = {
                 'id': user_id,
