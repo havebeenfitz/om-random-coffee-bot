@@ -1,3 +1,9 @@
 __pycache__
 venv
 .idea
+.aws-sam
+.DS_STORE
+env.json
+python
+*.zip
+boto3
