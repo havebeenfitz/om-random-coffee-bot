@@ -20,5 +20,5 @@ class MQBot(telegram.bot.Bot):
         return super(MQBot, self).send_message(*args, **kwargs)
 
     @mq.queuedmessage
-    def send_document(self, *args, **kwargs):
-        return super(MQBot, self).send_document(*args, **kwargs)
+    def send_photo(self, *args, **kwargs):
+        return super(MQBot, self).send_photo(*args, **kwargs)

@@ -15,7 +15,7 @@ from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 logging.getLogger().setLevel('INFO')
 
 queue = mq.MessageQueue(all_burst_limit=25)
-request = Request()
+request = Request(con_pool_size=10)
 bot = MQBot(TELEGRAM_API_KEY if PROD else TELEGRAM_API_DEBUG_KEY, request=request, mqueue=queue)
 updater = Updater(bot=bot)
 dispatcher = updater.dispatcher

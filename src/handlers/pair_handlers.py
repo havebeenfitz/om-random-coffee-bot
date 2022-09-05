@@ -3,7 +3,7 @@ import random
 
 from collections import defaultdict
 from src.db_helper import DBHelper
-from src.vars import MEMBERSHIP_CHAT_ID
+from src.vars import MEMBERSHIP_CHAT_ID, PAIRS_PIC_URL
 
 from telegram import Update, Bot
 from telegram.ext import CallbackContext
@@ -61,6 +61,10 @@ def _send_pair_messages(update, context, pair):
              f"Вы хотели {meeting_format}.\n\n" \
              f"Можно начать разговор с обсуждения интересов собеседника: {pair[1]['bio']}"
     )
+    context.bot.send_photo(
+        chat_id=update.effective_user.id,
+        photo=PAIRS_PIC_URL
+    )
     context.bot.send_message(
         # chat_id=pair[1]['id'],
         chat_id=update.effective_user.id,
@@ -68,6 +72,10 @@ def _send_pair_messages(update, context, pair):
              f"Твоя пара на эту неделю @{pair[0]['username']}. " \
              f"Вы хотели {meeting_format}.\n\n" \
              f"Можно начать разговор с обсуждения интересов собеседника: {pair[0]['bio']}"
+    )
+    context.bot.send_photo(
+        chat_id=update.effective_user.id,
+        photo=PAIRS_PIC_URL
     )
     logging.info(f"{pair[0]['username']}, your pair is {pair[1]['username']}")
     logging.info(f"{pair[1]['username']}, your pair is {pair[0]['username']}")
