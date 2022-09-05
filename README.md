@@ -2,10 +2,10 @@
 
 ![dogee](https://om-random-coffee-bot-bucket.s3.amazonaws.com/sobaka.jpg)
 
-OM Random Coffee Telegram bot 
+The bot generates pairs from registered users for them to meet each other either online or in person.
 
-Deployed with AWS Lambda (python 3.9 runtime). 
-User data stored in DynamoDB.
+
+Deployed with AWS Lambda (python 3.9 runtime). User data stored in DynamoDB.
 
 Dependencies:
 
