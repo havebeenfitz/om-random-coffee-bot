@@ -1,7 +1,17 @@
 # Random Coffee Bot for OM community
+
+![dogee](https://om-random-coffee-bot-bucket.s3.amazonaws.com/sobaka.jpg)
+
 OM Random Coffee Telegram bot 
-- python 3.9
-- python-telegram-bot v20.0a4
+
+Deployed with AWS Lambda (python 3.9 runtime). 
+User data stored in DynamoDB.
+
+Dependencies:
+
+- Python Telegram Bot
+- Geonames sdk
+- AWS sdk
 
 ## TODO:
 
