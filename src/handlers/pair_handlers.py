@@ -100,4 +100,4 @@ async def _send_no_pair_messages(update, context, no_pair_user):
              "В этот раз пары не нашлось из-за разных форматов встреч / городов / количества участников\n\n" \
              "Исправимся на следующей неделе, но это не точно"
     )
-    logging.info(f"{no_pair_user['username']}, 'no pair for you, dayymn. Meeting format doesn\'t match")
+    logging.info(f"{no_pair_user['username']}, with no pair")
