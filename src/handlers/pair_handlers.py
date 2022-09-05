@@ -53,7 +53,7 @@ def _shuffle_pairs(no_pair_users, pairs, users):
 
 
 def _send_pair_messages(update, context, pair):
-    meeting_format = "поболтать онлайн" if pair[0]['format'] == 'online' else f"встретиться в {pair[0]['city']}"
+    meeting_format = "поболтать онлайн" if pair[0]['format'] == 'online' else f"встретиться офлайн. Локация: {pair[0]['city']}"
     first_user_id = int(pair[0]['id'])
     second_user_id = int(pair[1]['id'])
     first_user_name = pair[0]['username']
@@ -66,7 +66,7 @@ def _send_pair_messages(update, context, pair):
         chat_id=update.effective_user.id,
         text=f"Штош, @{first_user_name}!\n\n" \
              f"Твоя пара на эту неделю @{second_user_name}. " \
-             f"Вы хотели {meeting_format}.\n\n" \
+             f"Вы оба хотели {meeting_format}.\n\n" \
              f"Можно начать разговор с обсуждения интересов собеседника: {second_user_bio}"
     )
     context.bot.send_photo(
