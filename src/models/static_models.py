@@ -1,4 +1,5 @@
 from collections import namedtuple
+from dataclasses import dataclass
 
 
 class Command:
@@ -7,14 +8,25 @@ class Command:
     cancel = 'cancel'
 
 
-class SurveyState:
+class MenuCallback:
+    fill_profile = 'fill_profile'
+    pause = 'pause'
+    send_feedback = 'send_feedback'
+    generate_pairs = 'generate_pairs'
+
+
+class FillProfileCallback:
     gender = 1
     meeting_format = 2
     city = 3
     bio = 4
 
 
-class Gender:
+class FeedbackCallback:
+    send = 1
+
+
+class GenderCallback:
     GenderType = namedtuple('GenderType', ['text', 'id'])
 
     male = GenderType(text="Муж", id='m')
@@ -22,7 +34,7 @@ class Gender:
     other = GenderType(text="Сложнее", id='o')
 
 
-class MeetingFormat:
+class MeetingFormatCallback:
     MeetingFormat = namedtuple('MeetingFormat', ['text', 'id'])
 
     online = MeetingFormat(text='Онлайн', id='online')
