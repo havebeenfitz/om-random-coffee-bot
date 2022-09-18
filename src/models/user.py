@@ -1,22 +1,4 @@
 from dataclasses import dataclass
-from collections import namedtuple
-
-
-@dataclass
-class Gender:
-    GenderType = namedtuple('GenderType', ['text', 'id'])
-
-    male = GenderType(text="Муж", id='m')
-    female = GenderType(text="Дама", id='f')
-    other = GenderType(text="Сложнее", id='o')
-
-
-@dataclass
-class MeetingFormat:
-    MeetingFormat = namedtuple('MeetingFormat', ['text', 'id'])
-
-    online = MeetingFormat(text='Онлайн', id='online')
-    offline = MeetingFormat(text='Офлайн', id='offline')
 
 
 @dataclass
