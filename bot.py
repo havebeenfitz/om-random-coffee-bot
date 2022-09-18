@@ -3,17 +3,20 @@ import logging
 import asyncio
 
 from telegram.ext import (
+    filters,
     ApplicationBuilder,
     Application,
     ContextTypes,
     CommandHandler,
     CallbackQueryHandler,
-    AIORateLimiter
+    AIORateLimiter,
+    MessageHandler
 )
 
+from src.handlers.menu_handlers import *
 from src.handlers.profile_handlers import *
 from src.handlers.common_handlers import *
-from src.models import Command, SurveyState, Gender, MeetingFormat
+from src.models.static_models import Command, FillProfileCallback, FeedbackCallback, GenderCallback, MeetingFormatCallback
 from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 
 # Logger setup
@@ -36,8 +39,7 @@ def lambda_handler(event, context):
 
 
 async def main(event, context):
-    application.add_handler(build_conversation_handler())
-    application.add_error_handler(error_handler)
+    add_handlers()
 
     if PROD:
         logging.info('Start processing response')
@@ -54,41 +56,73 @@ async def main(event, context):
 
         return 'Failure'
 
-def debug_main():
-    conversation_handler = build_conversation_handler()
 
-    application.add_handler(conversation_handler)
-    application.add_error_handler(error_handler)
+def debug_main():
+    add_handlers()
 
     application.run_polling()
 
 
-def build_conversation_handler() -> ConversationHandler:
+def add_handlers():
+    application.add_handler(CommandHandler(command=Command.start, callback=start_handler))
+    application.add_handler(CallbackQueryHandler(callback=pause_handler, pattern=f"^{MenuCallback.pause}$"))
+
+    application.add_handler(profile_conversation_handler())
+    application.add_handler(feedback_conversation_handler())
+    application.add_error_handler(error_handler)
+
+
+def profile_conversation_handler() -> ConversationHandler:
     return ConversationHandler(
         entry_points=[
-            CommandHandler(Command.start, start_handler)
+            CallbackQueryHandler(
+                profile_handler,
+                pattern=f"^{MenuCallback.fill_profile}$"
+            ),
+            CommandHandler(Command.cancel, cancel_handler)
         ],
         states={
-            SurveyState.gender: [
+            FillProfileCallback.gender: [
                 CallbackQueryHandler(
                     gender_handler,
-                    pattern=f"^{Gender.male.id}|{Gender.female.id}|{Gender.other.id}$",
+                    pattern=f"^{GenderCallback.male.id}|{GenderCallback.female.id}|{GenderCallback.other.id}$",
                 ),
                 CommandHandler(Command.cancel, cancel_handler)
             ],
-            SurveyState.meeting_format: [
+            FillProfileCallback.meeting_format: [
                 CallbackQueryHandler(
                     meeting_format_handler,
-                    pattern=f"^({MeetingFormat.online.id}|{MeetingFormat.offline.id})$"
+                    pattern=f"^({MeetingFormatCallback.online.id}|{MeetingFormatCallback.offline.id})$"
                 ),
                 CommandHandler(Command.cancel, cancel_handler)
             ],
-            SurveyState.city: [
+            FillProfileCallback.city: [
                 MessageHandler(filters=filters.LOCATION & ~filters.COMMAND, callback=city_handler),
                 CommandHandler(Command.cancel, cancel_handler)
             ],
-            SurveyState.bio: [
+            FillProfileCallback.bio: [
                 MessageHandler(filters=filters.TEXT & ~filters.COMMAND, callback=bio_handler),
+                CommandHandler(Command.cancel, cancel_handler)
+            ]
+        },
+        fallbacks=[
+            CommandHandler(Command.cancel, cancel_handler)
+        ]
+    )
+
+
+def feedback_conversation_handler() -> ConversationHandler:
+    return ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(
+                feedback_handler,
+                pattern=f"^{MenuCallback.send_feedback}$"
+            ),
+            CommandHandler(Command.cancel, cancel_handler)
+        ],
+        states={
+            FeedbackCallback.send: [
+                MessageHandler(filters=filters.TEXT & ~filters.COMMAND, callback=send_feedback),
                 CommandHandler(Command.cancel, cancel_handler)
             ]
         },
