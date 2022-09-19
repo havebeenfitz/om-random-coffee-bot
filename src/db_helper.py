@@ -1,15 +1,15 @@
-from collections import namedtuple
 from typing import Optional
-from src.vars import PROD
-from src.models.user import User
-from src.models.static_models import MeetingFormatCallback
+from typing import Optional
 
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Attr
+
+from src.models.static_models import MeetingFormatCallback
+from src.models.user import User
+from src.vars import PROD
 
 
 class DBHelper(object):
-
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(DBHelper, cls).__new__(cls)
@@ -55,9 +55,9 @@ class DBHelper(object):
             'bio': user.bio,
             'is_paused': user.is_paused
         }
-        if user.meeting_format == MeetingFormatCallback.offline:
+        if user.meeting_format == MeetingFormatCallback.offline.id:
             item['city'] = user.city
-            item['country']: user.country
+            item['country'] = user.country
 
         self._usersTable.put_item(Item=item)
 

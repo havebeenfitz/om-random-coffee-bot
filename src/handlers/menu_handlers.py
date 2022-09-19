@@ -2,6 +2,7 @@ import logging
 
 from telegram import (
     error,
+    ChatMember,
     ChatMemberBanned,
     ChatMemberLeft,
     Update,
@@ -17,10 +18,47 @@ from src.vars import ADMIN_ACCOUNTS, FEEDBACK_CHAT_ID
 logging.getLogger().setLevel('INFO')
 db_helper = DBHelper()
 
-current_session_user: User
+current_db_user: User
+chat_member: ChatMember
 
 
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        logging.info('Getting chat member..')
+        member = await _get_chat_member(update, context)
+        logging.info('Done..')
+
+        if member.status is not (ChatMemberLeft or ChatMemberBanned):
+            logging.info('Member is fine, show keyboard..')
+            db_user = _get_db_user(update, context)
+
+            if db_user is None:
+                await update.message.reply_text(
+                    text="Привет, я Random Coffee bot!\n\n"
+                    "Чтобы начать, заполни профиль ниже. Еще можно временно остановить участие и оставить отзыв",
+                )
+
+                menu_markup = _menu_buttons(context, member, db_user)
+
+                await update.message.reply_text(
+                    text='Меню',
+                    reply_markup=menu_markup
+                )
+            else:
+                await update.message.reply_text(
+                    text="Ты уже стартовал, вызови /menu, чтобы заполнить или отредактировать профиль"
+                )
+        else:
+            logging.info('Sending membership message request...')
+            await send_membership_message(update, context)
+            logging.info('Done')
+    except error.BadRequest as e:
+        logging.info('Bad request')
+        logging.info(e)
+        await send_membership_message(update, context)
+
+
+async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         logging.info('Getting chat member..')
         member = await context.bot.get_chat_member(chat_id=MEMBERSHIP_CHAT_ID, user_id=update.effective_user.id)
@@ -28,21 +66,12 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if member.status is not (ChatMemberLeft or ChatMemberBanned):
             logging.info('Member is fine, show keyboard..')
-            db_user = db_helper.get_user(user_id=member.user.id)
-
-            reply_keyboard: list[list] = []
-
-            if db_user is not None:
-                _add_existing_user_buttons(context, member, db_user, reply_keyboard)
-            else:
-                reply_keyboard.append(
-                    [InlineKeyboardButton('👤 Заполнить профиль', callback_data=MenuCallback.fill_profile)]
-                )
+            db_user = _get_db_user(update, context)
+            reply_keyboard_markup = _menu_buttons(context, member, db_user)
 
             await update.message.reply_text(
-                "Привет, я Random Coffee bot!\n\n"
-                "Чтобы начать, заполни профиль ниже. Еще можно временно остановить участие и оставить отзыв",
-                reply_markup=InlineKeyboardMarkup(reply_keyboard)
+                'Меню',
+                reply_markup=reply_keyboard_markup
             )
 
             logging.info('Keyboard shown')
@@ -58,31 +87,22 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def pause_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info('Setting pause on/off')
 
-    global current_session_user
+    db_user = _get_db_user(update, context)
 
-    try:
-        current_session_user
-    except NameError:
-        current_session_user = db_helper.get_user(str(update.effective_user.id))
+    should_pause = not db_user.is_paused
+    db_user.is_paused = should_pause
+    context.user_data['is_paused'] = db_user.is_paused
 
-    should_pause = not current_session_user.is_paused
-    current_session_user.is_paused = should_pause
+    member = await _get_chat_member(update, context)
 
-    db_helper.pause_user(should_pause, current_session_user)
-    inline_keyboard = update.callback_query.message.reply_markup.inline_keyboard
+    db_helper.pause_user(should_pause, db_user)
+    inline_markup = _menu_buttons(context, member, db_user)
 
-    for idx, inline_buttons in enumerate(inline_keyboard):
-        if inline_buttons[0].callback_data == MenuCallback.pause:
-            if not should_pause:
-                inline_keyboard[idx] = \
-                    [InlineKeyboardButton(text='⏸️ Поставить на паузу', callback_data=MenuCallback.pause)]
-            else:
-                inline_keyboard[idx] = \
-                    [InlineKeyboardButton(text='▶️ Снять с паузы', callback_data=MenuCallback.pause)]
-            break
+    await update.effective_message.edit_reply_markup(inline_markup)
 
-    await update.callback_query.message.edit_reply_markup(
-        InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+    await update.effective_message.reply_text(
+        text='Скрыл твою анкету. Если захочешь участвовать снова, сними с паузы' if should_pause
+        else 'Открыл твою анкету, ты снова участвуешь'
     )
 
     logging.info('Done pause')
@@ -125,33 +145,63 @@ async def send_membership_message(update: Update, context: ContextTypes.DEFAULT_
 
 # Private
 
-def _add_existing_user_buttons(context, member, db_user, reply_keyboard_markup):
-    context.user_data['is_paused'] = db_user.is_paused
-    global current_session_user
-    current_session_user = db_user
+def _get_db_user(update, context) -> User:
+    global current_db_user
 
-    reply_keyboard_markup.append(
-        [InlineKeyboardButton('👤 Редактировать профиль', callback_data=MenuCallback.fill_profile)]
-    )
+    try:
+        current_db_user
+    except NameError:
+        current_db_user = db_helper.get_user(str(update.effective_user.id))
 
-    if not db_user.is_paused:
-        reply_keyboard_markup.append(
-            [InlineKeyboardButton(text='⏸️ Поставить на паузу', callback_data=MenuCallback.pause)]
+    if current_db_user is not None:
+        context.user_data['is_paused'] = current_db_user.is_paused
+
+    return current_db_user
+
+
+async def _get_chat_member(update, context) -> ChatMember:
+    global chat_member
+
+    try:
+        chat_member
+    except NameError:
+        chat_member = await context.bot.get_chat_member(chat_id=MEMBERSHIP_CHAT_ID, user_id=update.effective_user.id)
+
+    return chat_member
+
+
+def _menu_buttons(context, member, db_user) -> InlineKeyboardMarkup:
+    reply_keyboard: list[list[InlineKeyboardButton]] = []
+
+    if db_user is not None:
+        reply_keyboard.append(
+            [InlineKeyboardButton('👤 Редактировать профиль', callback_data=MenuCallback.fill_profile)]
+        )
+
+        if not db_user.is_paused:
+            reply_keyboard.append(
+                [InlineKeyboardButton(text='⏸️ Поставить на паузу', callback_data=MenuCallback.pause)]
+            )
+        else:
+            reply_keyboard.append(
+                [InlineKeyboardButton(text='▶️ Снять с паузы', callback_data=MenuCallback.pause)]
+            )
+
+        reply_keyboard.append(
+            [InlineKeyboardButton(text='💡 Отправить отзыв', callback_data=MenuCallback.send_feedback)]
         )
     else:
-        reply_keyboard_markup.append(
-            [InlineKeyboardButton(text='▶️ Снять с паузы', callback_data=MenuCallback.pause)]
+        reply_keyboard.append(
+            [InlineKeyboardButton('👤 Заполнить профиль', callback_data=MenuCallback.fill_profile)]
         )
 
     if str(member.user.id) in ADMIN_ACCOUNTS:
         logging.info(f'{member.user.id} is admin. adding generate pairs handler...')
-        reply_keyboard_markup.append(
+        reply_keyboard.append(
             [InlineKeyboardButton(text='🎲 Сгенерировать пары', callback_data=MenuCallback.generate_pairs)]
         )
         context.application.add_handler(
             CallbackQueryHandler(callback=generate_pairs_handler, pattern=f"{MenuCallback.generate_pairs}")
         )
 
-    reply_keyboard_markup.append(
-        [InlineKeyboardButton(text='💡 Отправить отзыв', callback_data=MenuCallback.send_feedback)]
-    )
+    return InlineKeyboardMarkup(inline_keyboard=reply_keyboard)

@@ -178,5 +178,5 @@ async def update_user_in_db(update, context):
     db_helper.update_user_profile(user)
 
     await update.message.reply_text(
-        "Записано, жди понедельника!"
+        "Записано, жди понедельника! Можно вызвать меню, чтобы отредактировать профиль, поставить на паузу или оставить отзыв"
     )
