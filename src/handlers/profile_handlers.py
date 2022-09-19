@@ -27,7 +27,7 @@ async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     query = update.callback_query
     await query.answer()
 
-    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
+    await context.bot.send_chat_action(chat_id=update.effective_user.id, action=ChatAction.TYPING)
 
     logging.info('Member is fine, show keyboard..')
     reply_keyboard_markup = [

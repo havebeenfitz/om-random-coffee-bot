@@ -64,8 +64,9 @@ def debug_main():
 
 
 def add_handlers():
-    application.add_handler(CommandHandler(command=Command.start, callback=start_handler))
-    application.add_handler(CommandHandler(command=Command.menu, callback=menu_handler))
+    application.add_handler(CommandHandler(command=Command.start, callback=start_handler, filters=filters.ChatType.PRIVATE))
+    application.add_handler(CommandHandler(command=Command.menu, callback=menu_handler, filters=filters.ChatType.PRIVATE))
+    application.add_handler(MessageHandler(callback=dm_message_handler, filters=filters.ChatType.GROUPS))
 
     application.add_handler(CallbackQueryHandler(callback=pause_handler, pattern=f"^{MenuCallback.pause}$"))
 

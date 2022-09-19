@@ -19,6 +19,10 @@ current_db_user: User
 chat_member: ChatMember
 
 
+async def dm_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(text='Давай лучше в личку')
+
+
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         logging.info('Getting chat member..')
