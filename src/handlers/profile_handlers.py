@@ -24,6 +24,9 @@ db_helper = DBHelper()
 # Conversation handlers
 
 async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
     logging.info('Member is fine, show keyboard..')
@@ -101,7 +104,7 @@ async def meeting_format_handler(update: Update, context: CallbackContext) -> in
         new_keyboard = [[KeyboardButton(text='Поделиться локацией', request_location=True)]]
         await context.bot.send_message(
             chat_id=update.effective_user.id,
-            text='Где ты находишься? В локации будут использованы только страна и город',
+            text='Где ты находишься? Нажми кнопку "Поделиться локацией" снизу. \n\nИз локации будут использованы только страна и город',
             reply_markup=ReplyKeyboardMarkup(new_keyboard, one_time_keyboard=True, resize_keyboard=True)
         )
         return FillProfileCallback.city
@@ -178,5 +181,5 @@ async def update_user_in_db(update, context):
     db_helper.update_user_profile(user)
 
     await update.message.reply_text(
-        "Записано, жди понедельника!"
+        "Записано, жди понедельника! Можно вызвать меню, чтобы отредактировать профиль, поставить на паузу или оставить отзыв"
     )

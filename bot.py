@@ -65,6 +65,8 @@ def debug_main():
 
 def add_handlers():
     application.add_handler(CommandHandler(command=Command.start, callback=start_handler))
+    application.add_handler(CommandHandler(command=Command.menu, callback=menu_handler))
+
     application.add_handler(CallbackQueryHandler(callback=pause_handler, pattern=f"^{MenuCallback.pause}$"))
 
     application.add_handler(profile_conversation_handler())
@@ -97,7 +99,7 @@ def profile_conversation_handler() -> ConversationHandler:
                 CommandHandler(Command.cancel, cancel_handler)
             ],
             FillProfileCallback.city: [
-                MessageHandler(filters=filters.LOCATION & ~filters.COMMAND, callback=city_handler),
+                MessageHandler(filters=filters.LOCATION & ~filters.COMMAND & ~filters.TEXT, callback=city_handler),
                 CommandHandler(Command.cancel, cancel_handler)
             ],
             FillProfileCallback.bio: [

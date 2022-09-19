@@ -1,9 +1,9 @@
 from collections import namedtuple
-from dataclasses import dataclass
 
 
 class Command:
     start = 'start'
+    menu = 'menu'
     generate_pairs = 'generate'
     cancel = 'cancel'
 
