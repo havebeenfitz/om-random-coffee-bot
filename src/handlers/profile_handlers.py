@@ -24,6 +24,9 @@ db_helper = DBHelper()
 # Conversation handlers
 
 async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
     logging.info('Member is fine, show keyboard..')

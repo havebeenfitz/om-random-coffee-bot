@@ -1,8 +1,7 @@
 from typing import Optional
-from typing import Optional
 
 import boto3
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Key, Attr
 
 from src.models.static_models import MeetingFormatCallback
 from src.models.user import User

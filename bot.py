@@ -99,7 +99,7 @@ def profile_conversation_handler() -> ConversationHandler:
                 CommandHandler(Command.cancel, cancel_handler)
             ],
             FillProfileCallback.city: [
-                MessageHandler(filters=filters.LOCATION & ~filters.COMMAND, callback=city_handler),
+                MessageHandler(filters=filters.LOCATION & ~filters.COMMAND & ~filters.TEXT, callback=city_handler),
                 CommandHandler(Command.cancel, cancel_handler)
             ],
             FillProfileCallback.bio: [

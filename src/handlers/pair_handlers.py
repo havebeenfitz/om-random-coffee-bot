@@ -16,6 +16,9 @@ db_helper = DBHelper()
 
 
 async def generate_pairs(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.answer()
+
     logging.info('Generating pairs...')
 
     pairs: list[list] = []

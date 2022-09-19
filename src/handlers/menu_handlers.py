@@ -61,7 +61,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         logging.info('Getting chat member..')
-        member = await context.bot.get_chat_member(chat_id=MEMBERSHIP_CHAT_ID, user_id=update.effective_user.id)
+        member = await _get_chat_member(update, context)
         logging.info('Done..')
 
         if member.status is not (ChatMemberLeft or ChatMemberBanned):
@@ -85,6 +85,9 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def pause_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
     logging.info('Setting pause on/off')
 
     db_user = _get_db_user(update, context)
@@ -109,6 +112,9 @@ async def pause_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def feedback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+
     user_id = update.effective_user.id
 
     await context.bot.send_message(
