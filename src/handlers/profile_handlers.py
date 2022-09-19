@@ -104,7 +104,7 @@ async def meeting_format_handler(update: Update, context: CallbackContext) -> in
         new_keyboard = [[KeyboardButton(text='Поделиться локацией', request_location=True)]]
         await context.bot.send_message(
             chat_id=update.effective_user.id,
-            text='Где ты находишься? В локации будут использованы только страна и город',
+            text='Где ты находишься? Нажми кнопку "Поделиться локацией" снизу. \n\nИз локации будут использованы только страна и город',
             reply_markup=ReplyKeyboardMarkup(new_keyboard, one_time_keyboard=True, resize_keyboard=True)
         )
         return FillProfileCallback.city
