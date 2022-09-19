@@ -70,7 +70,7 @@ async def _send_pair_messages(update, context, pair: (User, User)):
         chat_id=first_user_id if PROD else update.effective_user.id,
         text=f"Штош, @{first_user_name}!\n\n" \
              f"Твоя пара на эту неделю @{second_user_name}. " \
-             f"Вы оба хотели {meeting_format}.\n\n" \
+             f"Вы хотели {meeting_format}.\n\n" \
              f"Можно начать разговор с обсуждения интересов собеседника: {second_user_bio}"
     )
     await context.bot.send_photo(

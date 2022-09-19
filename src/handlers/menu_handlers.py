@@ -1,11 +1,8 @@
-import logging
-
 from telegram import (
     error,
     ChatMember,
     ChatMemberBanned,
     ChatMemberLeft,
-    Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup
 )
