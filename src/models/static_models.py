@@ -25,6 +25,11 @@ class FillProfileCallback:
 class FeedbackCallback:
     send = 1
 
+class RemoveProfileCallback:
+    confirm = 'confirm_remove_profile'
+    cancel = 'cancel_remove_profile'
+    remove = 'remove_profile'
+
 
 class GenderCallback:
     GenderType = namedtuple('GenderType', ['text', 'id'])

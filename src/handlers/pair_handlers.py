@@ -19,6 +19,11 @@ async def generate_pairs(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
 
+    await context.bot.send_message(
+        chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
+        text="Сегодня понедельник, стартуем казино..."
+    )
+
     logging.info('Generating pairs...')
 
     pairs: list[list] = []
@@ -42,6 +47,11 @@ async def generate_pairs(update: Update, context: CallbackContext):
         await _send_no_pair_messages(update, context, no_pair_user)
 
     logging.info('Generating pairs done!')
+
+    await context.bot.send_message(
+        chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
+        text="Сгенерил вам пары на эту неделю, проверье личку!"
+    )
 
 
 # Private
@@ -86,9 +96,9 @@ async def _send_pair_messages(update, context, pair: (User, User)):
         )
 
         second_user_text = (f"Штош, @{second_user_name}!\n\n" if second_user_name else "Заполни пожалуйста ник, тебе невозможно будет написать.\n\n") + \
-             (f"Твоя пара на эту неделю @{first_user_name}. " if first_user_name else "У твоей пары не заполнен ник, надеюсь у тебя заполнен и тебе напишут\n\n") + \
-             f"Вы хотели {meeting_format}.\n\n" + \
-             f"Можно начать разговор с обсуждения интересов собеседника: {first_user_bio}"
+            (f"Твоя пара на эту неделю @{first_user_name}. " if first_user_name else "У твоей пары не заполнен ник, надеюсь у тебя заполнен и тебе напишут\n\n") + \
+            f"Вы хотели {meeting_format}.\n\n" + \
+            f"Можно начать разговор с обсуждения интересов собеседника: {first_user_bio}"
 
         await context.bot.send_message(
             chat_id=second_user_id if PROD else update.effective_user.id,
@@ -106,10 +116,13 @@ async def _send_pair_messages(update, context, pair: (User, User)):
 
 
 async def _send_no_pair_messages(update, context, no_pair_user: User):
+    no_pair_text = (f"Сорян, @{no_pair_user.username}!\n" if (no_pair_user.username is not None) else "Сорян\n\n") + \
+        "В этот раз пары не нашлось из-за разных форматов встреч / городов / количества участников\n\n" + \
+        "Исправимся в ближайшее время"
+
     await context.bot.send_message(
-        chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
-        text=f"Сорян, @{no_pair_user.username}!\n" \
-             "В этот раз пары не нашлось из-за разных форматов встреч / городов / количества участников\n\n" \
-             "Исправимся на следующей неделе, но это не точно"
+        chat_id=no_pair_user.user_id if PROD else update.effective_user.id,
+        text=no_pair_text
     )
+
     logging.info(f"{no_pair_user.username}, with no pair")

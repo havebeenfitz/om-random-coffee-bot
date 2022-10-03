@@ -72,9 +72,9 @@ class DBHelper(object):
             ReturnValues="UPDATED_NEW"
         )
 
-    def delete_user(self, user: User):
+    def delete_user(self, user_id):
         self._usersTable.delete_item(
             Key={
-                'user_id': user.user_id
+                'user_id': str(user_id)
             }
         )

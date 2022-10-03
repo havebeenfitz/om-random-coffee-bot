@@ -8,20 +8,13 @@ from telegram import (
 )
 from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler
 
+from src.handlers.common_handlers import *
 from src.handlers.pair_handlers import *
-from src.models.static_models import MenuCallback, FeedbackCallback
+from src.models.static_models import Command, MenuCallback, FeedbackCallback, RemoveProfileCallback
 from src.vars import ADMIN_ACCOUNTS, FEEDBACK_CHAT_ID
 
 logging.getLogger().setLevel('INFO')
 db_helper = DBHelper()
-
-current_db_user: User
-chat_member: ChatMember
-
-
-async def dm_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(text='Давай лучше в личку')
-
 
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -126,6 +119,38 @@ async def feedback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return FeedbackCallback.send
 
 
+async def confirm_remove_profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+
+    keyboard = [
+        [InlineKeyboardButton("Надо", callback_data=RemoveProfileCallback.remove)],
+        [InlineKeyboardButton("И правда не надо", callback_data=RemoveProfileCallback.cancel)]
+    ]
+
+    await context.bot.send_message(
+        chat_id=update.effective_user.id,
+        text="Может не надо?",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+async def remove_profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = update.effective_user.id
+    db_helper.delete_user(user_id)
+
+    await update.effective_message.edit_reply_markup(None)
+    await update.effective_message.edit_text('Удалил. Заходи еще')
+
+async def cancel_remove_profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    await update.effective_message.edit_reply_markup(None)
+    await update.effective_message.edit_text('Отменил')
+
 async def send_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     message = 'Оставили новый отзыв:\n\n' + '__________________\n\n' + update.message.text
 
@@ -153,12 +178,7 @@ async def send_membership_message(update: Update, context: ContextTypes.DEFAULT_
 # Private
 
 def _get_db_user(update, context) -> User:
-    global current_db_user
-
-    try:
-        current_db_user
-    except NameError:
-        current_db_user = db_helper.get_user(str(update.effective_user.id))
+    current_db_user = db_helper.get_user(str(update.effective_user.id))
 
     if current_db_user is not None:
         context.user_data['is_paused'] = current_db_user.is_paused
@@ -167,12 +187,7 @@ def _get_db_user(update, context) -> User:
 
 
 async def _get_chat_member(update, context) -> ChatMember:
-    global chat_member
-
-    try:
-        chat_member
-    except NameError:
-        chat_member = await context.bot.get_chat_member(chat_id=MEMBERSHIP_CHAT_ID, user_id=update.effective_user.id)
+    chat_member = await context.bot.get_chat_member(chat_id=MEMBERSHIP_CHAT_ID, user_id=update.effective_user.id)
 
     return chat_member
 
@@ -196,6 +211,10 @@ def _menu_buttons(context, member, db_user) -> InlineKeyboardMarkup:
 
         reply_keyboard.append(
             [InlineKeyboardButton(text='💡 Отправить отзыв', callback_data=MenuCallback.send_feedback)]
+        )
+
+        reply_keyboard.append(
+            [InlineKeyboardButton(text='❌ Удалить профиль', callback_data=RemoveProfileCallback.confirm)]
         )
     else:
         reply_keyboard.append(
