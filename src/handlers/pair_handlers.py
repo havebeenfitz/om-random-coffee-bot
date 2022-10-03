@@ -50,7 +50,8 @@ async def generate_pairs(update: Update, context: CallbackContext):
 
     await context.bot.send_message(
         chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
-        text="Сгенерил вам пары на эту неделю, проверье личку!"
+        text="Сгенерил вам пары на эту неделю, проверье личку!\n\n"
+             "P.S. Отзывы и идеи по улучшению можно оставить через меню"
     )
 
 
@@ -118,7 +119,8 @@ async def _send_pair_messages(update, context, pair: (User, User)):
 async def _send_no_pair_messages(update, context, no_pair_user: User):
     no_pair_text = (f"Сорян, @{no_pair_user.username}!\n" if (no_pair_user.username is not None) else "Сорян\n\n") + \
         "В этот раз пары не нашлось из-за разных форматов встреч / городов / количества участников\n\n" + \
-        "Исправимся в ближайшее время"
+        "Исправимся в ближайшее время, предложим пару из другого города для онлайн беседы\n\n" + \
+        "Пока что можно переключиться на онлайн, отредактировав профиль"
 
     await context.bot.send_message(
         chat_id=no_pair_user.user_id if PROD else update.effective_user.id,

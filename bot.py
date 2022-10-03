@@ -37,30 +37,11 @@ def user_lambda_handler(event, context):
         'body': result
     }
 
-
-def generate_pairs_lambda_handler(event, context):
-    result = asyncio.get_event_loop().run_until_complete(generate_pairs_job(event, context))
-
-    return {
-        'statusCode': 200,
-        'body': result
-    }
-
-
 async def main(event, context):
     add_user_handlers()
 
     if PROD:
         logging.info('Start processing response')
-        return await handle_update(event)
-
-async def generate_pairs_job(event, context):
-    application.add_handler(
-        CallbackQueryHandler(callback=generate_pairs_handler, pattern=f"{MenuCallback.generate_pairs}")
-    )
-
-    if PROD:
-        logging.info('Start generating pairs')
         return await handle_update(event)
 
 async def handle_update(event):
@@ -80,7 +61,6 @@ def debug_main():
     add_user_handlers()
 
     application.run_polling()
-
 
 def add_user_handlers():
     application.add_handler(
@@ -106,7 +86,6 @@ def add_user_handlers():
     )
 
     application.add_error_handler(error_handler)
-
 
 def profile_conversation_handler() -> ConversationHandler:
     return ConversationHandler(
