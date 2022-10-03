@@ -29,7 +29,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         member = await _get_chat_member(update, context)
         logging.info('Done..')
 
-        if member.status is not (ChatMemberLeft or ChatMemberBanned):
+        if (member is not None) and (member.status is not (ChatMemberLeft or ChatMemberBanned)):
             logging.info('Member is fine, show keyboard..')
             db_user = _get_db_user(update, context)
 
