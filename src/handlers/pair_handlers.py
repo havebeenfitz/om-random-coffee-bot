@@ -61,36 +61,48 @@ async def _send_pair_messages(update, context, pair: (User, User)):
         else f"встретиться офлайн. Локация: {pair[0].city}"
     first_user_id = int(pair[0].user_id)
     second_user_id = int(pair[1].user_id)
-    first_user_name = pair[0].username
-    second_user_name = pair[1].username
+    first_user_name: str
+    second_user_name: str
     first_user_bio = pair[0].bio
     second_user_bio = pair[1].bio
 
-    await context.bot.send_message(
-        chat_id=first_user_id if PROD else update.effective_user.id,
-        text=f"Штош, @{first_user_name}!\n\n" \
-             f"Твоя пара на эту неделю @{second_user_name}. " \
-             f"Вы хотели {meeting_format}.\n\n" \
-             f"Можно начать разговор с обсуждения интересов собеседника: {second_user_bio}"
-    )
-    await context.bot.send_photo(
-        chat_id=first_user_id if PROD else update.effective_user.id,
-        photo=PAIRS_PIC_URL
-    )
+    try:
+        first_user_name = pair[0].username
+        second_user_name = pair[1].username
 
-    await context.bot.send_message(
-        chat_id=second_user_id if PROD else update.effective_user.id,
-        text=f"Штош, @{second_user_name}!\n\n" \
-             f"Твоя пара на эту неделю @{first_user_name}. " \
-             f"Вы хотели {meeting_format}.\n\n" \
+        first_user_text = (f"Штош, @{first_user_name}!\n\n" if first_user_name else "Заполни пожалуйста ник, тебе невозможно написать.\n\n ") + \
+            (f"Твоя пара на эту неделю @{second_user_name}. " if second_user_name else "У твоей пары не заполнен ник, надеюсь у тебя заполнен и тебе напишут\n\n") + \
+            f"Вы хотели {meeting_format}.\n\n" + \
+            f"Можно начать разговор с обсуждения интересов собеседника: {second_user_bio}"
+
+        await context.bot.send_message(
+            chat_id=first_user_id if PROD else update.effective_user.id,
+            text=first_user_text
+        )
+
+        await context.bot.send_photo(
+            chat_id=first_user_id if PROD else update.effective_user.id,
+            photo=PAIRS_PIC_URL
+        )
+
+        second_user_text = (f"Штош, @{second_user_name}!\n\n" if second_user_name else "Заполни пожалуйста ник, тебе невозможно будет написать.\n\n") + \
+             (f"Твоя пара на эту неделю @{first_user_name}. " if first_user_name else "У твоей пары не заполнен ник, надеюсь у тебя заполнен и тебе напишут\n\n") + \
+             f"Вы хотели {meeting_format}.\n\n" + \
              f"Можно начать разговор с обсуждения интересов собеседника: {first_user_bio}"
-    )
-    await context.bot.send_photo(
-        chat_id=second_user_id if PROD else update.effective_user.id,
-        photo=PAIRS_PIC_URL
-    )
 
-    logging.info(f"{first_user_name}, paired with {second_user_name}")
+        await context.bot.send_message(
+            chat_id=second_user_id if PROD else update.effective_user.id,
+            text=second_user_text
+        )
+
+        await context.bot.send_photo(
+            chat_id=second_user_id if PROD else update.effective_user.id,
+            photo=PAIRS_PIC_URL
+        )
+
+        logging.info(f"{first_user_name}, paired with {second_user_name}")
+    except TypeError as e:
+        logging.info(f"error pairing users: {e}")
 
 
 async def _send_no_pair_messages(update, context, no_pair_user: User):
