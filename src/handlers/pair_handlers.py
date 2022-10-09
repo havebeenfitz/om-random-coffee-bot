@@ -73,7 +73,7 @@ async def generate_pairs(update: Update, context: CallbackContext):
 
     await context.bot.send_message(
         chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
-        text="Сгенерил вам пары на эту неделю, проверье личку!\n\n"
+        text="Сгенерил вам пары на эту неделю, проверьте личку!\n\n"
              "P.S. Отзывы и идеи по улучшению можно оставить через меню"
     )
 
