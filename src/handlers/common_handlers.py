@@ -10,7 +10,6 @@ from src.db_helper import DBHelper
 
 logging.getLogger().setLevel('INFO')
 
-
 # Common handlers
 
 async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
