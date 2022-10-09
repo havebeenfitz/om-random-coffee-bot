@@ -7,6 +7,7 @@ from telegram.ext import (
     ApplicationBuilder,
     Application,
     ContextTypes,
+    ChatMemberHandler,
     CommandHandler,
     CallbackQueryHandler,
     AIORateLimiter,
@@ -16,7 +17,9 @@ from telegram.ext import (
 from src.handlers.menu_handlers import *
 from src.handlers.profile_handlers import *
 from src.handlers.common_handlers import *
-from src.models.static_models import Command, FillProfileCallback, FeedbackCallback, GenderCallback, MeetingFormatCallback
+from src.models.static_models import (
+    Command, FillProfileCallback, FeedbackCallback, GenderCallback, MeetingFormatCallback
+)
 from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 
 # Logger setup
@@ -63,6 +66,7 @@ def debug_main():
     application.run_polling()
 
 def add_user_handlers():
+    # Track commands
     application.add_handler(
         CommandHandler(command=Command.start, callback=start_handler, filters=filters.ChatType.PRIVATE)
     )
@@ -70,11 +74,13 @@ def add_user_handlers():
         CommandHandler(command=Command.menu, callback=menu_handler, filters=filters.ChatType.PRIVATE)
     )
 
+    # Track Conversations and callbacks
+
     application.add_handler(profile_conversation_handler())
     application.add_handler(CallbackQueryHandler(callback=pause_handler, pattern=f"^{MenuCallback.pause}$"))
     application.add_handler(feedback_conversation_handler())
 
-    # Remove profile with confirmation
+    # Track Remove profile with confirmation
     application.add_handler(
         CallbackQueryHandler(confirm_remove_profile_handler, pattern=f"^{RemoveProfileCallback.confirm}$")
     )
@@ -85,6 +91,10 @@ def add_user_handlers():
         CallbackQueryHandler(cancel_remove_profile_handler, pattern=f"^{RemoveProfileCallback.cancel}$")
     )
 
+    # Track start/block actions
+    application.add_handler(ChatMemberHandler(callback=track_chats))
+
+    # Track errors
     application.add_error_handler(error_handler)
 
 def profile_conversation_handler() -> ConversationHandler:

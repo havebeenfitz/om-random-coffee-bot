@@ -19,9 +19,13 @@ async def generate_pairs(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
 
+    logging.info('Sending start pairing message to membership group')
     await context.bot.send_message(
         chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
         text="Сегодня понедельник, стартуем казино..."
+    )
+    await context.bot.send_dice(
+        chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id
     )
 
     logging.info('Generating pairs...')

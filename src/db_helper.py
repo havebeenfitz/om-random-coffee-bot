@@ -9,12 +9,13 @@ from src.vars import PROD
 
 
 class DBHelper(object):
-    def __new__(cls):
+    def __new__(cls, override_prod: bool = False):
         if not hasattr(cls, 'instance'):
             cls.instance = super(DBHelper, cls).__new__(cls)
+        cls._usersTable = boto3.resource('dynamodb').Table(
+            'users_prod' if override_prod else 'users_prod' if PROD else 'users_debug'
+        )
         return cls.instance
-
-    _usersTable = boto3.resource('dynamodb').Table('users_prod' if PROD else 'users_debug')
 
     def get_user(self, user_id: str) -> Optional[User]:
         response = self._usersTable.get_item(
