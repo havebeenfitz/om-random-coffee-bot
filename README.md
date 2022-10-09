@@ -1,4 +1,4 @@
-# Random Coffee Bot for OM community
+# Random Coffee Telegram Bot
 
 ![dogee](https://om-random-coffee-bot-bucket.s3.amazonaws.com/sobaka.jpg)
 
@@ -13,22 +13,6 @@ Dependencies:
 - Geonames sdk
 - AWS sdk
 
-## TODO:
+## Backlog
 
-### Priority:
-
-- AWS cron job
-  - Generate pairs weekly
-  - Bot asks if a user contacted his/her pair on Wed/Thu
-- ~~Inline Menu~~
-  - ~~Pause/Resume buttons~~
-  - ~~Generate pairs for admins~~
-  - ~~Provide Feedback button + send to separate channel~~
-
-
-### Nice to have:
-
-- Select offline location from a list
-- Notify members about the next round
-- ~~Edit profile from inline menu~~
-- Move all strings to a separate file/module
+[GitHub Project ➡️](https://github.com/users/havebeenfitz/projects/1/views/1)
