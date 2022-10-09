@@ -14,7 +14,6 @@ logging.getLogger().setLevel('INFO')
 
 db_helper = DBHelper()
 
-
 async def generate_pairs(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
@@ -28,12 +27,13 @@ async def generate_pairs(update: Update, context: CallbackContext):
         chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id
     )
 
-    logging.info('Generating pairs...')
+    logging.info('Generating strict pairs...')
 
-    pairs: list[list] = []
-    no_pair_users: list = []
     users: [User] = db_helper.get_all_users()
     grouped_users_dict = defaultdict(list[User])
+
+    pairs: list[list] = []
+    no_initial_pair_users: list = []
 
     for user in users:
         if user.meeting_format == 'offline':
@@ -41,14 +41,33 @@ async def generate_pairs(update: Update, context: CallbackContext):
         else:
             grouped_users_dict[user.meeting_format].append(user)
 
-    for group, users in grouped_users_dict.items():
-        _shuffle_pairs(no_pair_users, pairs, users)
+    for group, group_users in grouped_users_dict.items():
+        _shuffle_pairs(no_initial_pair_users, pairs, group_users)
 
     for pair in pairs:
-        await _send_pair_messages(update, context, pair)
+        await _send_pair_messages(update, context, pair, is_loose_pairing=False)
 
-    for no_pair_user in no_pair_users:
-        await _send_no_pair_messages(update, context, no_pair_user)
+    # Shuffle users without initial pairs
+    if len(no_initial_pair_users) > 0:
+        logging.info('Generating loose pairs...')
+
+        no_pair_users = []
+        loose_pairs: list[list] = []
+
+        await context.bot.send_message(
+            chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
+            text="Не хватает людей по локациям, пробую сматчить всех, кто остался..."
+        )
+
+        _shuffle_pairs(no_pair_users, loose_pairs, no_initial_pair_users)
+
+        for pair in loose_pairs:
+            await _send_pair_messages(update, context, pair, is_loose_pairing=True)
+
+        assert len(no_pair_users) <= 1
+
+        for no_pair_user in no_pair_users:
+            await _send_no_pair_messages(update, context, no_pair_user)
 
     logging.info('Generating pairs done!')
 
@@ -71,7 +90,7 @@ def _shuffle_pairs(no_pair_users, pairs, users):
         no_pair_users.append(shuffled_users[users_count - 1])
 
 
-async def _send_pair_messages(update, context, pair: (User, User)):
+async def _send_pair_messages(update, context, pair: (User, User), is_loose_pairing: bool):
     meeting_format = "поболтать онлайн" if pair[0].meeting_format == 'online' \
         else f"встретиться офлайн. Локация: {pair[0].city}"
     first_user_id = int(pair[0].user_id)
@@ -85,9 +104,11 @@ async def _send_pair_messages(update, context, pair: (User, User)):
         first_user_name = pair[0].username
         second_user_name = pair[1].username
 
-        first_user_text = (f"Штош, @{first_user_name}!\n\n" if first_user_name else "Заполни пожалуйста ник, тебе невозможно написать.\n\n ") + \
-            (f"Твоя пара на эту неделю @{second_user_name}. " if second_user_name else "У твоей пары не заполнен ник, надеюсь у тебя заполнен и тебе напишут\n\n") + \
-            f"Вы хотели {meeting_format}.\n\n" + \
+        no_initial_match_text = "Не хватает людей в твоей локации, но есть вариант поболтать онлайн!\n\n"
+
+        first_user_text = (f"Штош, @{first_user_name}!\n\n" if first_user_name else "Заполни пожалуйста ник, тебе невозможно написать.\n\n") + \
+            (f"Твоя пара на эту неделю @{second_user_name}.\n\n" if second_user_name else "У твоей пары не заполнен ник, надеюсь у тебя заполнен и тебе напишут\n\n") + \
+            (f"Вы хотели {meeting_format}.\n\n" if not is_loose_pairing else no_initial_match_text) + \
             f"Можно начать разговор с обсуждения интересов собеседника: {second_user_bio}"
 
         await context.bot.send_message(
@@ -101,8 +122,8 @@ async def _send_pair_messages(update, context, pair: (User, User)):
         )
 
         second_user_text = (f"Штош, @{second_user_name}!\n\n" if second_user_name else "Заполни пожалуйста ник, тебе невозможно будет написать.\n\n") + \
-            (f"Твоя пара на эту неделю @{first_user_name}. " if first_user_name else "У твоей пары не заполнен ник, надеюсь у тебя заполнен и тебе напишут\n\n") + \
-            f"Вы хотели {meeting_format}.\n\n" + \
+            (f"Твоя пара на эту неделю @{first_user_name}.\n\n" if first_user_name else "У твоей пары не заполнен ник, надеюсь у тебя заполнен и тебе напишут\n\n") + \
+            (f"Вы хотели {meeting_format}.\n\n" if not is_loose_pairing else no_initial_match_text) + \
             f"Можно начать разговор с обсуждения интересов собеседника: {first_user_bio}"
 
         await context.bot.send_message(

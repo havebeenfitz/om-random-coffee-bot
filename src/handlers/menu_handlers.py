@@ -119,7 +119,7 @@ async def feedback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return FeedbackCallback.send
 
 
-async def confirm_remove_profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def confirm_remove_profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
