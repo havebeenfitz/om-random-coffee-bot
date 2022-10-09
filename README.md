@@ -1,4 +1,4 @@
-# Random Coffee Bot for OM community
+# Random Coffee Telegram Bot
 
 ![dogee](https://om-random-coffee-bot-bucket.s3.amazonaws.com/sobaka.jpg)
 
