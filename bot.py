@@ -7,6 +7,7 @@ from telegram.ext import (
     ApplicationBuilder,
     Application,
     ContextTypes,
+    ChatMemberHandler,
     CommandHandler,
     CallbackQueryHandler,
     AIORateLimiter,
@@ -16,7 +17,9 @@ from telegram.ext import (
 from src.handlers.menu_handlers import *
 from src.handlers.profile_handlers import *
 from src.handlers.common_handlers import *
-from src.models.static_models import Command, FillProfileCallback, FeedbackCallback, GenderCallback, MeetingFormatCallback
+from src.models.static_models import (
+    Command, FillProfileCallback, FeedbackCallback, GenderCallback, MeetingFormatCallback
+)
 from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 
 # Logger setup
@@ -29,7 +32,7 @@ application = Application.builder() \
     .build()
 
 
-def lambda_handler(event, context):
+def user_lambda_handler(event, context):
     result = asyncio.get_event_loop().run_until_complete(main(event, context))
 
     return {
@@ -37,43 +40,62 @@ def lambda_handler(event, context):
         'body': result
     }
 
-
 async def main(event, context):
-    add_handlers()
+    add_user_handlers()
 
     if PROD:
         logging.info('Start processing response')
-        try:
-            logging.info('Trying process update')
-            await application.initialize()
-            await application.process_update(
-                Update.de_json(json.loads(event["body"]), application.bot)
-            )
-            return 'Success'
+        return await handle_update(event)
 
-        except Exception as exc:
-            logging.info(f"failed process update with {exc}")
+async def handle_update(event):
+    try:
+        logging.info('Trying process update')
+        await application.initialize()
+        await application.process_update(
+            Update.de_json(json.loads(event["body"]), application.bot)
+        )
+        return 'Success'
 
-        return 'Failure'
-
+    except Exception as exc:
+        logging.info(f"failed process update with {exc}")
+    return 'Failure'
 
 def debug_main():
-    add_handlers()
+    add_user_handlers()
 
     application.run_polling()
 
+def add_user_handlers():
+    # Track commands
+    application.add_handler(
+        CommandHandler(command=Command.start, callback=start_handler, filters=filters.ChatType.PRIVATE)
+    )
+    application.add_handler(
+        CommandHandler(command=Command.menu, callback=menu_handler, filters=filters.ChatType.PRIVATE)
+    )
 
-def add_handlers():
-    application.add_handler(CommandHandler(command=Command.start, callback=start_handler, filters=filters.ChatType.PRIVATE))
-    application.add_handler(CommandHandler(command=Command.menu, callback=menu_handler, filters=filters.ChatType.PRIVATE))
-    # application.add_handler(MessageHandler(filters=filters.ChatType.GROUPS & filters.COMMAND, callback=dm_message_handler))
-
-    application.add_handler(CallbackQueryHandler(callback=pause_handler, pattern=f"^{MenuCallback.pause}$"))
+    # Track Conversations and callbacks
 
     application.add_handler(profile_conversation_handler())
+    application.add_handler(CallbackQueryHandler(callback=pause_handler, pattern=f"^{MenuCallback.pause}$"))
     application.add_handler(feedback_conversation_handler())
-    application.add_error_handler(error_handler)
 
+    # Track Remove profile with confirmation
+    application.add_handler(
+        CallbackQueryHandler(confirm_remove_profile_handler, pattern=f"^{RemoveProfileCallback.confirm}$")
+    )
+    application.add_handler(
+        CallbackQueryHandler(remove_profile_handler, pattern=f"^{RemoveProfileCallback.remove}$")
+    )
+    application.add_handler(
+        CallbackQueryHandler(cancel_remove_profile_handler, pattern=f"^{RemoveProfileCallback.cancel}$")
+    )
+
+    # Track start/block actions
+    application.add_handler(ChatMemberHandler(callback=track_chats))
+
+    # Track errors
+    application.add_error_handler(error_handler)
 
 def profile_conversation_handler() -> ConversationHandler:
     return ConversationHandler(
