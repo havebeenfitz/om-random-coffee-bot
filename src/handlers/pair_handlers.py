@@ -3,7 +3,7 @@ import random
 
 from collections import defaultdict
 from src.db_helper import DBHelper
-from src.vars import MEMBERSHIP_CHAT_ID, PAIRS_PIC_URL, PROD
+from src.vars import POST_MESSAGES_CHAT_ID, PAIRS_PIC_URL, PROD
 from src.models.user import User
 
 from telegram import Update, Bot
@@ -20,11 +20,11 @@ async def generate_pairs(update: Update, context: CallbackContext):
 
     logging.info('Sending start pairing message to membership group')
     await context.bot.send_message(
-        chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
+        chat_id=POST_MESSAGES_CHAT_ID if PROD else update.effective_user.id,
         text="Сегодня понедельник, стартуем казино..."
     )
     await context.bot.send_dice(
-        chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id
+        chat_id=POST_MESSAGES_CHAT_ID if PROD else update.effective_user.id
     )
 
     logging.info('Generating strict pairs...')
@@ -55,7 +55,7 @@ async def generate_pairs(update: Update, context: CallbackContext):
         loose_pairs: list[list] = []
 
         await context.bot.send_message(
-            chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
+            chat_id=POST_MESSAGES_CHAT_ID if PROD else update.effective_user.id,
             text="Не хватает людей по локациям, пробую сматчить всех, кто остался..."
         )
 
@@ -72,7 +72,7 @@ async def generate_pairs(update: Update, context: CallbackContext):
     logging.info('Generating pairs done!')
 
     await context.bot.send_message(
-        chat_id=MEMBERSHIP_CHAT_ID if PROD else update.effective_user.id,
+        chat_id=POST_MESSAGES_CHAT_ID if PROD else update.effective_user.id,
         text="Сгенерил вам пары на эту неделю, проверьте личку!\n\n"
              "P.S. Отзывы и идеи по улучшению можно оставить через меню"
     )
