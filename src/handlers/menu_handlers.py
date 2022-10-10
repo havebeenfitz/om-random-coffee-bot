@@ -40,7 +40,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             else:
                 await update.message.reply_text(
-                    text="Ты уже стартовал, вызови /menu, чтобы заполнить или отредактировать профиль"
+                    text="Ты уже зарегистрирован, вызови /menu, чтобы посмотреть доступные команды"
                 )
         else:
             logging.info('Sending membership message request...')
