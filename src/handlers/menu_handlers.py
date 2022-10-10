@@ -11,7 +11,7 @@ from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler
 from src.handlers.common_handlers import *
 from src.handlers.pair_handlers import *
 from src.models.static_models import Command, MenuCallback, FeedbackCallback, RemoveProfileCallback
-from src.vars import ADMIN_ACCOUNTS, FEEDBACK_CHAT_ID
+from src.vars import ADMIN_ACCOUNTS, FEEDBACK_CHAT_ID, MEMBERSHIP_CHAT_ID
 
 logging.getLogger().setLevel('INFO')
 db_helper = DBHelper()
@@ -169,8 +169,8 @@ async def generate_pairs_handler(update: Update, context: ContextTypes.DEFAULT_T
 
 async def send_membership_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(
-        text='Надо быть в стае, чтобы пользоваться ботом. Сходи сюда и подпишись: https://boosty.to/m0rtymerr'
-             'Если уже подписан, то вступи в ОМ: Флудилка'
+        text='Надо быть в стае, чтобы пользоваться ботом. Сходи сюда и подпишись: https://boosty.to/m0rtymerr\n\n'
+             'Если уже подписан, то вступи в ОМ: Полезное'
     )
 
     return ConversationHandler.END
