@@ -24,6 +24,7 @@ async def clean_up():
         except:
             print(user.user_id, end=' ')
             print('blocked the bot')
+            db.delete_user(user.user_id)
 
 if __name__ == '__main__':
-    asyncio.get_event_loop().run_until_complete(clean_up())
+    asyncio.run(clean_up())

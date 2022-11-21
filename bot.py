@@ -33,7 +33,7 @@ application = Application.builder() \
 
 
 def user_lambda_handler(event, context):
-    result = asyncio.get_event_loop().run_until_complete(main(event, context))
+    result = asyncio.run(main(event, context))
 
     return {
         'statusCode': 200,
@@ -44,20 +44,20 @@ async def main(event, context):
     add_user_handlers()
 
     if PROD:
-        logging.info('Start processing response')
         return await handle_update(event)
 
 async def handle_update(event):
     try:
-        logging.info('Trying process update')
+        logging.info('Processing update...')
         await application.initialize()
         await application.process_update(
             Update.de_json(json.loads(event["body"]), application.bot)
         )
+        logging.info(f'Processed update {event["body"]}')
         return 'Success'
 
     except Exception as exc:
-        logging.info(f"failed process update with {exc}")
+        logging.info(f"Failed to process update with {exc}")
     return 'Failure'
 
 def debug_main():
