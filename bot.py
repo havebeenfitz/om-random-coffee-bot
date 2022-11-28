@@ -33,7 +33,7 @@ application = Application.builder() \
 
 
 def user_lambda_handler(event, context):
-    result = asyncio.run(main(event, context))
+    result = asyncio.get_event_loop().run_until_complete(main(event, context))
 
     return {
         'statusCode': 200,
