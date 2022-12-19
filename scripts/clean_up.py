@@ -15,13 +15,15 @@ async def clean_up():
 
     await application.initialize()
 
+    print('Number of active users: ', len(users))
+
     for user in users:
         try:
             await application.bot.send_chat_action(chat_id=user.user_id, action=ChatAction.TYPING)
-            print(user, end=' ')
+            print(user.user_id, end=' ')
             print('stayed')
             pass
-        except:
+        except: 
             print(user.user_id, end=' ')
             print('blocked the bot')
             db.delete_user(user.user_id)
