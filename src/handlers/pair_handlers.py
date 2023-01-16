@@ -22,6 +22,7 @@ async def generate_pairs(update: Update, context: CallbackContext):
 
     logging.info('Cleaning up db just in case...')
     await clean_up(update, context)
+    await context.bot.send_message(chat_id=update.effective_user.id, text="Clean up done")
 
     logging.info('Sending start pairing message to membership group')
     await context.bot.send_message(
@@ -82,7 +83,7 @@ async def generate_pairs(update: Update, context: CallbackContext):
              "P.S. Отзывы и идеи по улучшению можно оставить через меню"
     )
 
-    await context.bot.send_message(chat_id=update.effective_user.id, text="Clean up done")
+    await context.bot.send_message(chat_id=update.effective_user.id, text="Generated pairs successfully")
 
 
 # Private
@@ -175,5 +176,3 @@ async def clean_up(update, context):
         except:
             logging.info(f"{user.user_id} blocked the bot, removing from db")
             db_helper.delete_user(user.user_id)
-
-    await context.bot.send_message(chat_id=update.effective_user.id, text="Clean up done")
