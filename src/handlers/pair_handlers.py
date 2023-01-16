@@ -3,11 +3,13 @@ import random
 
 from collections import defaultdict
 from src.db_helper import DBHelper
-from src.vars import POST_MESSAGES_CHAT_ID, PAIRS_PIC_URL, PROD
+from src.vars import POST_MESSAGES_CHAT_ID, PAIRS_PIC_URL, PROD, ADMIN_ACCOUNTS
 from src.models.user import User
+from src.vars import TELEGRAM_API_KEY
 
 from telegram import Update, Bot
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, Application, AIORateLimiter
+from telegram.constants import ChatAction
 
 # Logger setup
 logging.getLogger().setLevel('INFO')
@@ -17,6 +19,9 @@ db_helper = DBHelper()
 async def generate_pairs(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
+
+    logging.info('Cleaning up db just in case...')
+    await clean_up(update, context)
 
     logging.info('Sending start pairing message to membership group')
     await context.bot.send_message(
@@ -76,6 +81,8 @@ async def generate_pairs(update: Update, context: CallbackContext):
         text="Сгенерил вам пары на эту неделю, проверьте личку!\n\n"
              "P.S. Отзывы и идеи по улучшению можно оставить через меню"
     )
+
+    await context.bot.send_message(chat_id=update.effective_user.id, text="Clean up done")
 
 
 # Private
@@ -153,3 +160,20 @@ async def _send_no_pair_messages(update, context, no_pair_user: User):
     )
 
     logging.info(f"{no_pair_user.username}, with no pair")
+
+
+async def clean_up(update, context):
+    users = db_helper.get_all_users()
+
+    await context.bot.send_message(chat_id=update.effective_user.id, text=f"Number of active users: {len(users)}")
+
+    for user in users:
+        try:
+            await context.bot.send_chat_action(chat_id=user.user_id, action=ChatAction.TYPING)
+            logging.info(f"{user.user_id} stayed")
+            pass
+        except:
+            logging.info(f"{user.user_id} blocked the bot, removing from db")
+            db_helper.delete_user(user.user_id)
+
+    await context.bot.send_message(chat_id=update.effective_user.id, text="Clean up done")

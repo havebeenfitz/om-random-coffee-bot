@@ -23,7 +23,7 @@ async def clean_up():
             print(user.user_id, end=' ')
             print('stayed')
             pass
-        except: 
+        except:
             print(user.user_id, end=' ')
             print('blocked the bot')
             db.delete_user(user.user_id)
