@@ -13,7 +13,7 @@ class MenuCallback:
     pause = 'pause'
     send_feedback = 'send_feedback'
     generate_pairs = 'generate_pairs'
-
+    send_message = 'send_message'
 
 class FillProfileCallback:
     gender = 1
@@ -24,6 +24,9 @@ class FillProfileCallback:
 
 class FeedbackCallback:
     send = 1
+
+class SendMessageCallback:
+    send_admin_message = 1
 
 class RemoveProfileCallback:
     confirm = 'confirm_remove_profile'

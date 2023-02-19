@@ -18,7 +18,12 @@ from src.handlers.menu_handlers import *
 from src.handlers.profile_handlers import *
 from src.handlers.common_handlers import *
 from src.models.static_models import (
-    Command, FillProfileCallback, FeedbackCallback, GenderCallback, MeetingFormatCallback
+    Command,
+    FillProfileCallback,
+    FeedbackCallback,
+    SendMessageCallback,
+    GenderCallback,
+    MeetingFormatCallback
 )
 from src.vars import TELEGRAM_API_KEY, PROD, TELEGRAM_API_DEBUG_KEY
 
@@ -155,7 +160,6 @@ def feedback_conversation_handler() -> ConversationHandler:
             CommandHandler(Command.cancel, cancel_handler)
         ]
     )
-
 
 if __name__ == '__main__':
     if not PROD:

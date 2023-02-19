@@ -6,11 +6,18 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup
 )
-from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler
+from telegram.ext import (
+    filters,
+    ContextTypes,
+    ConversationHandler,
+    CallbackQueryHandler,
+    CommandHandler,
+    MessageHandler
+)
 
 from src.handlers.common_handlers import *
 from src.handlers.pair_handlers import *
-from src.models.static_models import Command, MenuCallback, FeedbackCallback, RemoveProfileCallback
+from src.models.static_models import Command, MenuCallback, FeedbackCallback, RemoveProfileCallback, SendMessageCallback
 from src.vars import ADMIN_ACCOUNTS, FEEDBACK_CHAT_ID, MEMBERSHIP_CHAT_ID
 
 logging.getLogger().setLevel('INFO')
@@ -166,6 +173,27 @@ async def send_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 async def generate_pairs_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await generate_pairs(update, context)
 
+async def confirm_send_admin_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = update.effective_user.id
+
+    await context.bot.send_message(
+        chat_id=user_id,
+        text='Напиши кек'
+    )
+
+    return SendMessageCallback.send_admin_message
+
+async def send_admin_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(
+        chat_id=POST_MESSAGES_CHAT_ID if PROD else update.effective_user.id,
+        text=update.message.text
+    )
+    await context.bot.send_message(chat_id=update.effective_user.id, text='Отправил кек')
+
+    return ConversationHandler.END
 
 async def send_membership_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(
@@ -192,6 +220,7 @@ async def _get_chat_member(update, context) -> ChatMember:
 
     return chat_member
 
+# Private
 
 def _menu_buttons(context, member, db_user) -> InlineKeyboardMarkup:
     reply_keyboard: list[list[InlineKeyboardButton]] = []
@@ -223,12 +252,40 @@ def _menu_buttons(context, member, db_user) -> InlineKeyboardMarkup:
         )
 
     if str(member.user.id) in ADMIN_ACCOUNTS:
-        logging.info(f'{member.user.id} is admin. adding generate pairs handler...')
-        reply_keyboard.append(
-            [InlineKeyboardButton(text='🎲 Сгенерировать пары', callback_data=MenuCallback.generate_pairs)]
-        )
-        context.application.add_handler(
-            CallbackQueryHandler(callback=generate_pairs_handler, pattern=f"{MenuCallback.generate_pairs}")
-        )
+        _add_admin_handlers(context, member, reply_keyboard)
 
     return InlineKeyboardMarkup(inline_keyboard=reply_keyboard)
+
+
+def _add_admin_handlers(context, member, reply_keyboard):
+    logging.info(f'{member.user.id} is admin. adding generate pairs handler...')
+    reply_keyboard.append(
+        [InlineKeyboardButton(text='🎲 Сгенерировать пары', callback_data=MenuCallback.generate_pairs)]
+    )
+    context.application.add_handler(
+        CallbackQueryHandler(callback=generate_pairs_handler, pattern=f"{MenuCallback.generate_pairs}")
+    )
+    reply_keyboard.append(
+        [InlineKeyboardButton(text='🤡 Отправить кек в ОМ: Флудилка', callback_data=MenuCallback.send_message)]
+    )
+
+    context.application.add_handler(
+        ConversationHandler(
+            entry_points=[
+                CallbackQueryHandler(
+                    confirm_send_admin_message_handler,
+                    pattern=f"^{MenuCallback.send_message}$"
+                ),
+                CommandHandler(Command.cancel, cancel_handler)
+            ],
+            states={
+                SendMessageCallback.send_admin_message: [
+                    MessageHandler(filters=filters.TEXT & ~filters.COMMAND, callback=send_admin_message_handler),
+                    CommandHandler(Command.cancel, cancel_handler)
+                ]
+            },
+            fallbacks=[
+                CommandHandler(Command.cancel, cancel_handler)
+            ]
+        )
+    )
