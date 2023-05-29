@@ -80,7 +80,6 @@ def add_user_handlers():
     )
 
     # Track Conversations and callbacks
-
     application.add_handler(profile_conversation_handler())
     application.add_handler(CallbackQueryHandler(callback=pause_handler, pattern=f"^{MenuCallback.pause}$"))
     application.add_handler(feedback_conversation_handler())
@@ -95,9 +94,6 @@ def add_user_handlers():
     application.add_handler(
         CallbackQueryHandler(cancel_remove_profile_handler, pattern=f"^{RemoveProfileCallback.cancel}$")
     )
-
-    # Track start/block actions
-    application.add_handler(ChatMemberHandler(callback=track_chats))
 
     # Track errors
     application.add_error_handler(error_handler)
