@@ -159,7 +159,10 @@ async def cancel_remove_profile_handler(update: Update, context: ContextTypes.DE
     await update.effective_message.edit_text('Отменил')
 
 async def send_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    message = 'Оставили новый отзыв:\n\n' + '__________________\n\n' + update.message.text
+    message = 'Новый отзыв:\n\n' + '__________________\n\n' + update.message.text + \
+    '\n\n' + \
+    'Отправил: ' + '@' + update.effective_user.username
+
 
     await context.bot.send_message(
         chat_id=FEEDBACK_CHAT_ID,
